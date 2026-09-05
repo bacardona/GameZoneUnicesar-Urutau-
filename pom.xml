@@ -8,6 +8,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>26</maven.compiler.release>
-        <exec.mainClass>com.mycompany.taller.gamezoneunicesar.urutau.TallerGameZoneUnicesarUrutau</exec.mainClass>
+    <exec.mainClass>com.gamezone.Main</exec.mainClass>    
     </properties>
 </project>

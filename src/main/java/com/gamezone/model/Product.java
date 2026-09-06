@@ -57,6 +57,13 @@ public abstract class Product {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
-
+    
+    /**
+     * Builds a full description of the product. Each subclass implements
+     * this method in its own way (polymorphism).
+     *
+     * @return a textual description of the product
+     */
+    public abstract String getDescription();
 }
     

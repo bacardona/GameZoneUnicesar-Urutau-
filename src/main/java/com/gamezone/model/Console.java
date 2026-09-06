@@ -53,5 +53,17 @@ public class Console extends Product {
     public void setGeneration(String generation) {
         this.generation = generation;
     }
-    
+     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDescription() {
+        String descripcion = getTitle() + " [Console]";
+        descripcion = descripcion + " - Brand: " + brand;
+        descripcion = descripcion + ", Model: " + model;
+        descripcion = descripcion + ", Generation: " + generation;
+        descripcion = descripcion + ", Price: $" + getPrice();
+        descripcion = descripcion + ", Stock: " + getQuantity();
+        return descripcion;
+    }
 }

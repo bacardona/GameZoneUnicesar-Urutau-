@@ -62,5 +62,38 @@ public class ProductService {
         productRepository.save(products);
     }
     
+    /**
+     * Returns the full list of products currently in inventory.
+     *
+     * @return list of all products
+     */
+    public List<Product> listProducts() {
+        return products;
+    }
+
+    /**
+     * Reduces the stock of a product after a sale.
+     *
+     * @param productId    id of the product being sold
+     * @param quantitySold quantity being sold
+     */
+    public void updateStock(String productId, int quantitySold) {
+        // Buscamos el producto por su id
+        for (int i = 0; i < products.size(); i++) {
+            Product producto = products.get(i);
+
+            if (producto.getId().equals(productId)) {
+                // Validamos que haya suficiente stock antes de descontar
+                if (producto.getQuantity() < quantitySold) {
+                    System.out.println("No hay suficiente stock para: " + producto.getTitle());
+                    return;
+                }
+                producto.setQuantity(producto.getQuantity() - quantitySold);
+                productRepository.save(products);
+                return;
+            }
+        }
+        System.out.println("Producto no encontrado: " + productId);
+    }
 }
 

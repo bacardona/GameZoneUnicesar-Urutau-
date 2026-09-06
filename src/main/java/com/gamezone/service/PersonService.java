@@ -1,9 +1,9 @@
 package com.gamezone.service;
 
+import com.gamezone.model.Customer;
 import com.gamezone.model.Person;
 import com.gamezone.persistence.PersonRepository;
 import java.util.List;
-
 
 /**
  * Contiene las reglas de negocio relacionadas con las personas.
@@ -22,20 +22,20 @@ public class PersonService {
     }
 
     /**
-     * Registra una nueva persona.
+     * Registra un nuevo cliente.
      *
-     * @param person persona que se desea registrar
+     * @param customer cliente que se desea registrar
      */
-    public void registerPerson(Person person) {
-        personRepository.save(person);
+    public void registerCustomer(Customer customer) {
+        personRepository.save(customer);
     }
-    
+
     /**
- * Carga las personas almacenadas previamente.
- */
-public void loadPeople() {
-    personRepository.load();
-}
+     * Carga las personas almacenadas previamente.
+     */
+    public void loadPeople() {
+        personRepository.load();
+    }
 
     /**
      * Obtiene todas las personas registradas.

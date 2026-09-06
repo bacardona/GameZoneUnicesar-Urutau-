@@ -1,6 +1,8 @@
 
 package com.gamezone.model;
-
+/**
+ * Abstract base class representing a generic product sold by GameZoneUnicesar.
+ */
 public abstract class Product {
 
     // Atributos comunes a todos los productos

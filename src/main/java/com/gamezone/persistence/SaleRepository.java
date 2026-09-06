@@ -16,6 +16,8 @@ import java.util.List;
  * which are resolved back into real objects when loading.
  **/
 
+
+//Aqui usa el formato CSV para hacer el listado
 public class SaleRepository {
 
     private static final String FILE_PATH = "data/sales.csv";
@@ -50,6 +52,7 @@ public class SaleRepository {
      * @return the list of sales recovered from disk
      **/
     
+    //Encargado de cargar todas las ventas del CSV
     public List<Sale> load(List<Customer> customers, List<Seller> sellers, List<Product> products) {
         List<Sale> sales = new ArrayList<>();
         File file = new File(FILE_PATH);
@@ -80,6 +83,7 @@ public class SaleRepository {
      * @return the CSV representation of the sale
     **/
     
+    //Encargado de convertir una venta en una linea de CSV
     private String toLine(Sale sale) {
         List<Product> saleProducts = sale.getProducts();
         StringBuilder productIds = new StringBuilder();
@@ -109,6 +113,7 @@ public class SaleRepository {
      * @return the reconstructed Sale, or null if the customer or seller could not be found
     **/
     
+    //Reconstruye un objeto Venta a partir de una sola línea CSV
     private Sale fromLine(String line, List<Customer> customers, List<Seller> sellers, List<Product> products) {
         String[] fields = line.split(FIELD_SEPARATOR, -1);
         if (fields.length < 5) return null;
@@ -134,7 +139,7 @@ public class SaleRepository {
 
     /**
      * Searches for a customer by ID within the given list.
-     *
+     
      * @param customers the customers to search through
      * @param id the ID to look for
      * @return the matching customer, or null if not found

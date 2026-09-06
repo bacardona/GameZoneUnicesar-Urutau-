@@ -18,6 +18,7 @@ import java.util.List;
  * and loads previously stored data before starting the menu.
 **/
 
+//Desde aqui empieza el main
 public class Main {
     
      /**
@@ -58,6 +59,7 @@ public class Main {
      * @param sellers the list of sellers loaded at startup
      */
     
+//Esto es para los datos precargados, ojo
     private static void checkPreloadedSellers(List<Seller> sellers) {
         if (sellers.size() < 3) {
             System.out.println("WARNING: fewer than 3 preloaded sellers found ("

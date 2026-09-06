@@ -91,6 +91,8 @@ public class Sale {
      * @return the total amount of the sale
      **/
     
+    
+    //Aca se calcula el total chicos
     public double calculateTotal() {
         double total = 0.0;
         for (Product product : products) {

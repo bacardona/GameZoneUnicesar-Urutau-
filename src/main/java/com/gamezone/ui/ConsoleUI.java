@@ -77,8 +77,8 @@ public class ConsoleUI {
         }
     }
 
-    /** VALIDATION HELPERS **/
-
+//VALIDACIONES DE AYUDA
+    
     /**
      * Repeatedly prompts the user until the entered value satisfies the given
      * validator, printing the error message on every invalid attempt.
@@ -183,7 +183,7 @@ public class ConsoleUI {
         }
     }
 
-    // ==================== PRODUCTS ====================
+    //PRODUCTOS
 
     /**
      * Displays the product submenu and executes the selected operation.
@@ -246,8 +246,8 @@ public class ConsoleUI {
         productService.listProducts().forEach(p -> System.out.println(p.getDescription()));
     }
 
-    // ==================== PEOPLE ====================
-
+// GENTE/PERSONAS
+    
     /**
      * Displays the person submenu and executes the selected operation.
      
@@ -296,8 +296,8 @@ public class ConsoleUI {
         personService.listSellers().forEach(s -> System.out.println(s.getID() + " - " + s.getName()));
     }
 
-    // ==================== SALES ====================
-
+//VENTAS
+    
     /**
      * Displays the sale submenu and executes the selected operation.
      

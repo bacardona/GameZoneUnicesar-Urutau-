@@ -19,6 +19,7 @@ import java.util.UUID;
  * PersonService (customer/seller lookup) to enforce the sale rules.
  **/
 
+//Encargado de la logica principal
 public class SaleService {
 
     private final SaleRepository saleRepository;
@@ -60,6 +61,7 @@ public class SaleService {
      *                                   stock is insufficient for any product
      **/
     
+    //Encargado de registrar una nueva venta despues de validar con las reglas descritas, arrojando una respuestas dependiendo del resultado
     public Sale registerSale(String customerId, String sellerId, List<String> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             throw new IllegalArgumentException("A sale must contain at least one product.");
@@ -153,6 +155,7 @@ public class SaleService {
      * @return a map from product id to the quantity requested
     **/
     
+    //Encargado de contar cuantas veces un ID de producto aparece en una lista, para asi que un producto que aparece en una lista varias veces sea tratado en un solo stock
     private Map<String, Integer> countQuantities(List<String> productIds) {
         Map<String, Integer> counts = new HashMap<>();
         for (String id : productIds) {
@@ -169,6 +172,7 @@ public class SaleService {
      * @return the matching customer, or null if not found
     **/
     
+    //Buscar cliente por ID
     private Customer findCustomerById(String customerId) {
         for (Customer c : personService.listCustomers()) {
             if (c.getID().equals(customerId)) {
@@ -186,6 +190,7 @@ public class SaleService {
      * @return the matching seller, or null if not found
     **/
     
+    //Buscar vendedor por ID
     private Seller findSellerById(String sellerId) {
         for (Seller s : personService.listSellers()) {
             if (s.getID().equals(sellerId)) {
@@ -203,6 +208,7 @@ public class SaleService {
      * @return the matching product, or null if not found
     **/
     
+    //Buscar un producto por ID
     private Product findProductById(String productId) {
         for (Product p : productService.listProducts()) {
             if (p.getId().equals(productId)) {
@@ -221,6 +227,7 @@ public class SaleService {
      * @return true if enough stock is available, false otherwise
     **/
     
+    //Validar que la cantidad requerida sea suficiente (productos)
     private boolean hasSufficientStock(String productId, int quantityNeeded) {
         Product product = findProductById(productId);
         return product != null && product.getQuantity() >= quantityNeeded;

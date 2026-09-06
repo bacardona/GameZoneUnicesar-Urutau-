@@ -58,4 +58,49 @@ public class ProductRepository {
         }
     }
     
+    /**
+     * Loads all products previously saved in the data file.
+     *
+     * @return list of products, or an empty list if the file does not exist
+     */
+    public List<Product> load() {
+        List<Product> productos = new ArrayList<>();
+        File archivo = new File(filePath);
+
+        // Si el archivo aún no existe, devolvemos la lista vacía
+        if (!archivo.exists()) {
+            return productos;
+        }
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(archivo));
+            String linea = reader.readLine();
+
+            while (linea != null) {
+                if (!linea.trim().isEmpty()) {
+                    String[] partes = linea.split(";");
+                    String tipo = partes[0];
+                    String id = partes[1];
+                    String title = partes[2];
+                    double price = Double.parseDouble(partes[3]);
+                    int quantity = Integer.parseInt(partes[4]);
+
+                    if (tipo.equals("VG")) {
+                        productos.add(new VideoGame(id, title, price, quantity,
+                                partes[5], partes[6], partes[7]));
+                    } else if (tipo.equals("CO")) {
+                        productos.add(new Console(id, title, price, quantity,
+                                partes[5], partes[6], partes[7]));
+                    }
+                }
+                linea = reader.readLine();
+            }
+
+            reader.close();
+        } catch (IOException e) {
+            System.out.println("Error al cargar los productos: " + e.getMessage());
+        }
+
+        return productos;
+    }
 }

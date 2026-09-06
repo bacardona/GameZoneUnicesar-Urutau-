@@ -66,7 +66,7 @@ public class PersonRepository {
             writer.newLine();
 
         } catch (IOException e) {
-            System.out.println("Error al guardar la persona: " + e.getMessage());
+            System.out.println("Error saving person: " + e.getMessage());
         }
     }
     
@@ -117,7 +117,7 @@ public void load() {
         }
 
     } catch (IOException e) {
-        System.out.println("Error al cargar las personas: " + e.getMessage());
+        System.out.println("Error loading people: " + e.getMessage());
     }
 }
     

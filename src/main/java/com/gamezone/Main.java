@@ -12,7 +12,22 @@ import com.gamezone.service.SaleService;
 import com.gamezone.ui.ConsoleUI;
 import java.util.List;
 
+/**
+ * Entry point of the GameZone Unicesar application.
+ * Wires together repositories, services, and the console UI,
+ * and loads previously stored data before starting the menu.
+**/
+
 public class Main {
+    
+     /**
+     * Starts the application: builds the dependency graph
+     * (repositories -> services -> UI), loads previously stored data,
+     * and launches the main menu.
+     *
+     * @param args command-line arguments (not used)
+    **/
+    
     public static void main(String[] args) {
 // --- Persistence + Service layers (Product and Person load themselves) --- //
         PersonRepository personRepository = new PersonRepository(); 
@@ -36,6 +51,13 @@ public class Main {
         consoleUI.showMainMenu();
     }
 
+     /**
+     * Verifies that the system starts with at least three preloaded sellers,
+     * as required for the first execution of the application.
+     *
+     * @param sellers the list of sellers loaded at startup
+     */
+    
     private static void checkPreloadedSellers(List<Seller> sellers) {
         if (sellers.size() < 3) {
             System.out.println("WARNING: fewer than 3 preloaded sellers found ("

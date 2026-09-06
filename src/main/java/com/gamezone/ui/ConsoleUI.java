@@ -12,6 +12,7 @@ import java.util.Scanner;
  * Displays the main menu and delegates each operation to the
  * corresponding service (PersonService, ProductService, SaleService).
  **/
+
 public class ConsoleUI {
 
     private final Scanner scanner;
@@ -26,6 +27,7 @@ public class ConsoleUI {
      * @param productService service used to manage products
      * @param saleService service used to manage sales
      */
+    
     public ConsoleUI(PersonService personService, ProductService productService, SaleService saleService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
@@ -36,6 +38,7 @@ public class ConsoleUI {
     /**
      * Displays the main menu in a loop until the user chooses to exit.
      **/
+    
     public void showMainMenu() {
         boolean running = true;
 
@@ -71,11 +74,13 @@ public class ConsoleUI {
             }
         }
     }
+    
     /**
      * Displays the product submenu and executes the selected operation.
      *
      * @param option the menu option selected by the user
-     */
+    **/
+    
     private void showProductMenu(String option) {
         switch (option) {
             case "1" -> registerVideoGame();
@@ -84,6 +89,10 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Prompts the user for video game data and registers it through ProductService.
+    **/
+    
     private void registerVideoGame() {
         System.out.println("\n--- Register Video Game ---");
         System.out.print("ID: ");
@@ -105,6 +114,10 @@ public class ConsoleUI {
         System.out.println("Video game registered successfully.");
     }
 
+    /**
+     * Prompts the user for console data and registers it through ProductService.
+    **/
+    
     private void registerConsole() {
         System.out.println("\n--- Register Console ---");
         System.out.print("ID: ");
@@ -126,6 +139,10 @@ public class ConsoleUI {
         System.out.println("Console registered successfully.");
     }
 
+    /**
+     * Prints the description of every product currently in inventory.
+    **/
+    
     private void listProducts() {
         System.out.println("\n--- Product Inventory ---");
         productService.listProducts().forEach(p -> System.out.println(p.getDescription()));
@@ -135,7 +152,8 @@ public class ConsoleUI {
      * Displays the person submenu and executes the selected operation.
      
      * @param option the menu option selected by the user
-     **/
+    **/
+    
     private void showPersonMenu(String option) {
         switch (option) {
             case "4" -> registerCustomer();
@@ -144,6 +162,11 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Prompts the user for customer data, builds a Customer object,
+     * and registers it through PersonService.
+    **/
+    
     private void registerCustomer() {
     System.out.println("\n--- Register Customer ---");
     System.out.print("ID: ");
@@ -160,11 +183,19 @@ public class ConsoleUI {
     System.out.println("Customer registered successfully.");
     }
 
+    /**
+     * Prints the id and name of every registered customer.
+    **/
+    
     private void listCustomers() {
         System.out.println("\n--- Customers ---");
         personService.listCustomers().forEach(c -> System.out.println(c.getID() + " - " + c.getName()));
     }
 
+    /**
+     * Prints the id and name of every registered seller.
+    **/
+    
     private void listSellers() {
         System.out.println("\n--- Sellers ---");
         personService.listSellers().forEach(s -> System.out.println(s.getID() + " - " + s.getName()));
@@ -174,7 +205,8 @@ public class ConsoleUI {
      * Displays the sale submenu and executes the selected operation.
      *
      * @param option the menu option selected by the user
-     **/
+    **/
+    
     private void showSaleMenu(String option) {
         switch (option) {
             case "7" -> registerSale();
@@ -184,6 +216,12 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Prompts the user for a customer id, a seller id, and one or more
+     * product ids, then attempts to register the sale through SaleService,
+     * printing a friendly message if any business rule is violated.
+    **/
+    
     private void registerSale() {
         System.out.println("\n--- Register Sale ---");
         System.out.print("Customer ID: ");
@@ -211,23 +249,42 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Prints the complete sales history.
+    **/
+    
     private void viewFullHistory() {
         System.out.println("\n--- Full Sales History ---");
         saleService.getAllSales().forEach(this::printSale);
     }
 
+    /**
+     * Prompts for a customer id and prints that customer's purchase history.
+    **/
+    
     private void viewHistoryByCustomer() {
         System.out.print("Customer ID: ");
         String customerId = scanner.nextLine();
         saleService.getSalesByCustomer(customerId).forEach(this::printSale);
     }
 
+    /**
+     * Prompts for a seller id and prints the sales that seller attended.
+    **/
+    
     private void viewHistoryBySeller() {
         System.out.print("Seller ID: ");
         String sellerId = scanner.nextLine();
         saleService.getSalesBySeller(sellerId).forEach(this::printSale);
     }
 
+    /**
+     * Prints a single sale in a readable, one-line format, used by all
+     * three history views to avoid repeating the same formatting logic.
+     *
+     * @param sale the sale to print
+    **/
+    
     private void printSale(com.gamezone.model.Sale sale) {
         System.out.println("Sale " + sale.getId() + " | Customer: " + sale.getCustomer().getName()
                 + " | Seller: " + sale.getSeller().getName() + " | Total: " + sale.calculateTotal());

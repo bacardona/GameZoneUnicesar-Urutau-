@@ -150,7 +150,7 @@ public class ConsoleUI {
 
     /**
      * Displays the person submenu and executes the selected operation.
-     *
+     
      * @param option the menu option selected by the user
     **/
     

@@ -31,4 +31,44 @@ public class VideoGame extends Product {
         this.genre = genre;
         this.ageRating = ageRating;
     }
+    
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public void setGenre(String genre) {
+        this.genre = genre;
+    }
+
+    public String getAgeRating() {
+        return ageRating;
+    }
+
+    public void setAgeRating(String ageRating) {
+        this.ageRating = ageRating;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDescription() {
+        // Unimos los datos del padre (title, price, quantity) con los propios
+        String descripcion = getTitle() + " [Video Game]";
+        descripcion = descripcion + " - Platform: " + platform;
+        descripcion = descripcion + ", Genre: " + genre;
+        descripcion = descripcion + ", Age rating: " + ageRating;
+        descripcion = descripcion + ", Price: $" + getPrice();
+        descripcion = descripcion + ", Stock: " + getQuantity();
+        return descripcion;
+    }
+
 }

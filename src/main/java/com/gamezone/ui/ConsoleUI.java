@@ -1,5 +1,6 @@
 package com.gamezone.ui;
 
+import com.gamezone.model.Customer;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
@@ -10,7 +11,7 @@ import java.util.Scanner;
  * Console-based user interface for the GameZone system.
  * Displays the main menu and delegates each operation to the
  * corresponding service (PersonService, ProductService, SaleService).
- */
+ **/
 public class ConsoleUI {
 
     private final Scanner scanner;
@@ -20,7 +21,7 @@ public class ConsoleUI {
 
     /**
      * Creates a new ConsoleUI.
-     *
+     
      * @param personService service used to manage customers and sellers
      * @param productService service used to manage products
      * @param saleService service used to manage sales
@@ -34,7 +35,7 @@ public class ConsoleUI {
 
     /**
      * Displays the main menu in a loop until the user chooses to exit.
-     */
+     **/
     public void showMainMenu() {
         boolean running = true;
 
@@ -100,7 +101,6 @@ public class ConsoleUI {
         System.out.print("Age rating: ");
         String ageRating = scanner.nextLine();
 
-        // 🔶 confirmar firma exacta con Desarrollador 1
         productService.registerVideoGame(id, title, price, quantity, platform, genre, ageRating);
         System.out.println("Video game registered successfully.");
     }
@@ -122,22 +122,20 @@ public class ConsoleUI {
         System.out.print("Generation: ");
         String generation = scanner.nextLine();
 
-        // 🔶 confirmar firma exacta con Desarrollador 1
         productService.registerConsole(id, title, price, quantity, brand, model, generation);
         System.out.println("Console registered successfully.");
     }
 
     private void listProducts() {
         System.out.println("\n--- Product Inventory ---");
-        // 🔶 confirmar nombre exacto: listProducts() / getAllProducts() / findAll()
         productService.listProducts().forEach(p -> System.out.println(p.getDescription()));
     }
 
     /**
      * Displays the person submenu and executes the selected operation.
-     *
+     
      * @param option the menu option selected by the user
-     */
+     **/
     private void showPersonMenu(String option) {
         switch (option) {
             case "4" -> registerCustomer();
@@ -147,37 +145,36 @@ public class ConsoleUI {
     }
 
     private void registerCustomer() {
-        System.out.println("\n--- Register Customer ---");
-        System.out.print("ID: ");
-        String id = scanner.nextLine();
-        System.out.print("Name: ");
-        String name = scanner.nextLine();
-        System.out.print("Phone: ");
-        String phone = scanner.nextLine();
-        System.out.print("Email: ");
-        String email = scanner.nextLine();
+    System.out.println("\n--- Register Customer ---");
+    System.out.print("ID: ");
+    String id = scanner.nextLine();
+    System.out.print("Name: ");
+    String name = scanner.nextLine();
+    System.out.print("Phone: ");
+    String phone = scanner.nextLine();
+    System.out.print("Email: ");
+    String email = scanner.nextLine();
 
-        // 🔶 confirmar firma exacta con Desarrollador 2
-        personService.registerCustomer(id, name, phone, email);
-        System.out.println("Customer registered successfully.");
+    Customer customer = new Customer(id, name, phone, email);
+    personService.registerCustomer(customer);
+    System.out.println("Customer registered successfully.");
     }
 
     private void listCustomers() {
         System.out.println("\n--- Customers ---");
-        // 🔶 confirmar nombre exacto con Desarrollador 2
-        personService.listCustomers().forEach(c -> System.out.println(c.getId() + " - " + c.getName()));
+        personService.listCustomers().forEach(c -> System.out.println(c.getID() + " - " + c.getName()));
     }
 
     private void listSellers() {
         System.out.println("\n--- Sellers ---");
-        personService.listSellers().forEach(s -> System.out.println(s.getId() + " - " + s.getName()));
+        personService.listSellers().forEach(s -> System.out.println(s.getID() + " - " + s.getName()));
     }
 
     /**
      * Displays the sale submenu and executes the selected operation.
      *
      * @param option the menu option selected by the user
-     */
+     **/
     private void showSaleMenu(String option) {
         switch (option) {
             case "7" -> registerSale();

@@ -70,17 +70,169 @@ public class ConsoleUI {
             }
         }
     }
-
-    // Los submenús privados van en la Parte 2 (próximo commit)
+    /**
+     * Displays the product submenu and executes the selected operation.
+     *
+     * @param option the menu option selected by the user
+     */
     private void showProductMenu(String option) {
-        System.out.println("Product menu not implemented yet.");
+        switch (option) {
+            case "1" -> registerVideoGame();
+            case "2" -> registerConsole();
+            case "3" -> listProducts();
+        }
     }
 
+    private void registerVideoGame() {
+        System.out.println("\n--- Register Video Game ---");
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Title: ");
+        String title = scanner.nextLine();
+        System.out.print("Price: ");
+        double price = Double.parseDouble(scanner.nextLine());
+        System.out.print("Quantity: ");
+        int quantity = Integer.parseInt(scanner.nextLine());
+        System.out.print("Platform: ");
+        String platform = scanner.nextLine();
+        System.out.print("Genre: ");
+        String genre = scanner.nextLine();
+        System.out.print("Age rating: ");
+        String ageRating = scanner.nextLine();
+
+        // 🔶 confirmar firma exacta con Desarrollador 1
+        productService.registerVideoGame(id, title, price, quantity, platform, genre, ageRating);
+        System.out.println("Video game registered successfully.");
+    }
+
+    private void registerConsole() {
+        System.out.println("\n--- Register Console ---");
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Title: ");
+        String title = scanner.nextLine();
+        System.out.print("Price: ");
+        double price = Double.parseDouble(scanner.nextLine());
+        System.out.print("Quantity: ");
+        int quantity = Integer.parseInt(scanner.nextLine());
+        System.out.print("Brand: ");
+        String brand = scanner.nextLine();
+        System.out.print("Model: ");
+        String model = scanner.nextLine();
+        System.out.print("Generation: ");
+        String generation = scanner.nextLine();
+
+        // 🔶 confirmar firma exacta con Desarrollador 1
+        productService.registerConsole(id, title, price, quantity, brand, model, generation);
+        System.out.println("Console registered successfully.");
+    }
+
+    private void listProducts() {
+        System.out.println("\n--- Product Inventory ---");
+        // 🔶 confirmar nombre exacto: listProducts() / getAllProducts() / findAll()
+        productService.listProducts().forEach(p -> System.out.println(p.getDescription()));
+    }
+
+    /**
+     * Displays the person submenu and executes the selected operation.
+     *
+     * @param option the menu option selected by the user
+     */
     private void showPersonMenu(String option) {
-        System.out.println("Person menu not implemented yet.");
+        switch (option) {
+            case "4" -> registerCustomer();
+            case "5" -> listCustomers();
+            case "6" -> listSellers();
+        }
     }
 
+    private void registerCustomer() {
+        System.out.println("\n--- Register Customer ---");
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Phone: ");
+        String phone = scanner.nextLine();
+        System.out.print("Email: ");
+        String email = scanner.nextLine();
+
+        // 🔶 confirmar firma exacta con Desarrollador 2
+        personService.registerCustomer(id, name, phone, email);
+        System.out.println("Customer registered successfully.");
+    }
+
+    private void listCustomers() {
+        System.out.println("\n--- Customers ---");
+        // 🔶 confirmar nombre exacto con Desarrollador 2
+        personService.listCustomers().forEach(c -> System.out.println(c.getId() + " - " + c.getName()));
+    }
+
+    private void listSellers() {
+        System.out.println("\n--- Sellers ---");
+        personService.listSellers().forEach(s -> System.out.println(s.getId() + " - " + s.getName()));
+    }
+
+    /**
+     * Displays the sale submenu and executes the selected operation.
+     *
+     * @param option the menu option selected by the user
+     */
     private void showSaleMenu(String option) {
-        System.out.println("Sale menu not implemented yet.");
+        switch (option) {
+            case "7" -> registerSale();
+            case "8" -> viewFullHistory();
+            case "9" -> viewHistoryByCustomer();
+            case "10" -> viewHistoryBySeller();
+        }
+    }
+
+    private void registerSale() {
+        System.out.println("\n--- Register Sale ---");
+        System.out.print("Customer ID: ");
+        String customerId = scanner.nextLine();
+        System.out.print("Seller ID: ");
+        String sellerId = scanner.nextLine();
+
+        java.util.List<String> productIds = new java.util.ArrayList<>();
+        boolean addingProducts = true;
+        while (addingProducts) {
+            System.out.print("Product ID (empty to finish): ");
+            String productId = scanner.nextLine();
+            if (productId.isBlank()) {
+                addingProducts = false;
+            } else {
+                productIds.add(productId);
+            }
+        }
+
+        try {
+            var sale = saleService.registerSale(customerId, sellerId, productIds);
+            System.out.println("Sale registered. Total: " + sale.calculateTotal());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register sale: " + e.getMessage());
+        }
+    }
+
+    private void viewFullHistory() {
+        System.out.println("\n--- Full Sales History ---");
+        saleService.getAllSales().forEach(this::printSale);
+    }
+
+    private void viewHistoryByCustomer() {
+        System.out.print("Customer ID: ");
+        String customerId = scanner.nextLine();
+        saleService.getSalesByCustomer(customerId).forEach(this::printSale);
+    }
+
+    private void viewHistoryBySeller() {
+        System.out.print("Seller ID: ");
+        String sellerId = scanner.nextLine();
+        saleService.getSalesBySeller(sellerId).forEach(this::printSale);
+    }
+
+    private void printSale(com.gamezone.model.Sale sale) {
+        System.out.println("Sale " + sale.getId() + " | Customer: " + sale.getCustomer().getName()
+                + " | Seller: " + sale.getSeller().getName() + " | Total: " + sale.calculateTotal());
     }
 }

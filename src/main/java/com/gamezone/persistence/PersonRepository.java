@@ -13,7 +13,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 
 /**
- * Gestiona la persistencia de las personas del sistema GameZone.
+ * Handles the persistence of people in the GameZone system. It stores and
+ * retrieves customers and sellers from a text file.
  */
 public class PersonRepository {
 
@@ -21,30 +22,34 @@ public class PersonRepository {
     private final String filePath = "data/people.txt";
 
     /**
-     * Crea un repositorio vacío de personas.
+     * Creates an empty people repository and loads previously stored data from
+     * the file.
      */
     public PersonRepository() {
         people = new ArrayList<>();
 
+        // Crea la carpeta data si todavía no existe.
         File folder = new File("data");
 
         if (!folder.exists()) {
             folder.mkdirs();
         }
-        
+
         load();
     }
 
     /**
-     * Guarda una persona en el repositorio.
+     * Saves a person to the repository and appends their information to the
+     * data file.
      *
-     * @param person persona que se desea guardar
+     * @param person person to be saved
      */
     public void save(Person person) {
         people.add(person);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
 
+            // Guarda la información dependiendo del tipo de persona.
             if (person instanceof Customer) {
                 Customer customer = (Customer) person;
 
@@ -69,64 +74,65 @@ public class PersonRepository {
             System.out.println("Error saving person: " + e.getMessage());
         }
     }
-    
+
     /**
- * Carga las personas almacenadas en el archivo.
- */
-public void load() {
+     * Loads people previously stored in the data file. Each record is converted
+     * into the corresponding Customer or Seller object.
+     */
+    public void load() {
+        people.clear();
 
-    people.clear();
+        File file = new File(filePath);
 
-    File file = new File(filePath);
-
-    if (!file.exists()) {
-        return;
-    }
-
-    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-
-            String[] data = line.split("\\|");
-
-            if (data[0].equals("CUSTOMER")) {
-
-                Customer customer = new Customer(
-                        data[1],
-                        data[2],
-                        data[3],
-                        data[4]
-                );
-
-                people.add(customer);
-
-            } else if (data[0].equals("SELLER")) {
-
-                Seller seller = new Seller(
-                        data[1],
-                        data[2],
-                        data[3],
-                        data[4],
-                        data[5]
-                );
-
-                people.add(seller);
-            }
+        // Si el archivo no existe, no hay datos que cargar.
+        if (!file.exists()) {
+            return;
         }
 
-    } catch (IOException e) {
-        System.out.println("Error loading people: " + e.getMessage());
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+
+                String[] data = line.split("\\|");
+
+                // Reconstruye un Customer usando los datos almacenados.
+                if (data[0].equals("CUSTOMER")) {
+
+                    Customer customer = new Customer(
+                            data[1],
+                            data[2],
+                            data[3],
+                            data[4]
+                    );
+
+                    people.add(customer);
+
+                    // Reconstruye un Seller usando los datos almacenados.
+                } else if (data[0].equals("SELLER")) {
+
+                    Seller seller = new Seller(
+                            data[1],
+                            data[2],
+                            data[3],
+                            data[4],
+                            data[5]
+                    );
+
+                    people.add(seller);
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error loading people: " + e.getMessage());
+        }
     }
-}
-    
-    
 
     /**
-     * Obtiene todas las personas almacenadas.
+     * Gets all people stored in the repository.
      *
-     * @return lista de personas
+     * @return list containing all stored people
      */
     public List<Person> findAll() {
         return people;

@@ -1,8 +1,8 @@
 package com.gamezone.model;
 
 /**
- * Representa la información común de todas las personas
- * que participan en el sistema GameZone.
+ * Represents the common information shared by all people in the GameZone
+ * system.
  */
 public abstract class Person {
 
@@ -11,11 +11,11 @@ public abstract class Person {
     private String phone;
 
     /**
-     * Crea una persona con su información básica.
+     * Creates a person with their basic information.
      *
-     * @param id identificación de la persona
-     * @param name nombre de la persona
-     * @param phone teléfono de contacto de la persona
+     * @param id person's identification
+     * @param name person's name
+     * @param phone person's contact phone number
      */
     public Person(String id, String name, String phone) {
         this.id = id;
@@ -24,54 +24,54 @@ public abstract class Person {
     }
 
     /**
-     * Obtiene la identificación de la persona.
+     * Gets the person's identification.
      *
-     * @return identificación de la persona
+     * @return person's identification
      */
     public String getID() {
         return id;
     }
 
     /**
-     * Modifica la identificación de la persona.
+     * Updates the person's identification.
      *
-     * @param id nueva identificación
+     * @param id new identification
      */
     public void setID(String id) {
         this.id = id;
     }
 
     /**
-     * Obtiene el nombre de la persona.
+     * Gets the person's name.
      *
-     * @return nombre de la persona
+     * @return person's name
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Modifica el nombre de la persona.
+     * Updates the person's name.
      *
-     * @param name nuevo nombre
+     * @param name new name
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * Obtiene el teléfono de la persona.
+     * Gets the person's phone number.
      *
-     * @return teléfono de contacto
+     * @return person's contact phone number
      */
     public String getPhone() {
         return phone;
     }
 
     /**
-     * Modifica el teléfono de la persona.
+     * Updates the person's phone number.
      *
-     * @param phone nuevo teléfono de contacto
+     * @param phone new contact phone number
      */
     public void setPhone(String phone) {
         this.phone = phone;

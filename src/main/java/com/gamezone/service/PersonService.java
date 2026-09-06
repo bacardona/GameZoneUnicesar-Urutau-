@@ -1,6 +1,7 @@
 package com.gamezone.service;
 
 import com.gamezone.model.Customer;
+import com.gamezone.model.Seller;
 import com.gamezone.model.Person;
 import com.gamezone.persistence.PersonRepository;
 import java.util.ArrayList;
@@ -55,6 +56,25 @@ public class PersonService {
         }
 
         return customers;
+    }
+
+    /**
+     * Obtiene todos los vendedores registrados.
+     *
+     * @return lista de vendedores
+     */
+    public List<Seller> listSellers() {
+
+        List<Seller> sellers = new ArrayList<>();
+
+        for (Person person : personRepository.findAll()) {
+
+            if (person instanceof Seller) {
+                sellers.add((Seller) person);
+            }
+        }
+
+        return sellers;
     }
 
 }

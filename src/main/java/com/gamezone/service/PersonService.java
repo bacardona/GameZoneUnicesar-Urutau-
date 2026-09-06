@@ -30,14 +30,54 @@ public class PersonService {
      */
     public void registerCustomer(Customer customer) {
 
+        validateCustomer(customer);
+
         for (Person person : personRepository.findAll()) {
 
             if (person.getID().equals(customer.getID())) {
-                return;
+                throw new IllegalArgumentException("ID already exists.");
             }
         }
 
         personRepository.save(customer);
+    }
+
+    /**
+     * Valida los datos de un cliente antes de registrarlo.
+     *
+     * @param customer cliente cuyos datos se desean validar
+     * @throws IllegalArgumentException si alguno de los datos no cumple con las
+     * reglas de validación
+     */
+    private void validateCustomer(Customer customer) {
+
+        if (customer.getID() == null || customer.getID().isBlank()) {
+            throw new IllegalArgumentException("ID cannot be empty.");
+        }
+
+        if (customer.getName() == null || customer.getName().isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty.");
+        }
+
+        if (!customer.getName().matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+")) {
+            throw new IllegalArgumentException("Name cannot contain numbers or special characters.");
+        }
+
+        if (customer.getPhone() == null || customer.getPhone().isBlank()) {
+            throw new IllegalArgumentException("Phone cannot be empty.");
+        }
+
+        if (!customer.getPhone().matches("\\d+")) {
+            throw new IllegalArgumentException("Phone must contain only digits.");
+        }
+
+        if (customer.getEmail() == null || customer.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be empty.");
+        }
+
+        if (!customer.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new IllegalArgumentException("Email format is invalid.");
+        }
     }
 
     /**

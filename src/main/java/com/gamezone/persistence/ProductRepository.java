@@ -54,7 +54,7 @@ public class ProductRepository {
 
             writer.close();
         } catch (IOException e) {
-            System.out.println("Error al guardar los productos: " + e.getMessage());
+            System.out.println("Error saving products: " + e.getMessage());
         }
     }
     
@@ -98,7 +98,7 @@ public class ProductRepository {
 
             reader.close();
         } catch (IOException e) {
-            System.out.println("Error al cargar los productos: " + e.getMessage());
+            System.out.println("Error loading products: " + e.getMessage());
         }
 
         return productos;

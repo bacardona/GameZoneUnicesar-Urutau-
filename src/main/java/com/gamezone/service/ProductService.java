@@ -85,7 +85,7 @@ public class ProductService {
             if (producto.getId().equals(productId)) {
                 // Validamos que haya suficiente stock antes de descontar
                 if (producto.getQuantity() < quantitySold) {
-                    System.out.println("No hay suficiente stock para: " + producto.getTitle());
+                    System.out.println("Not enough stock for: " + producto.getTitle());
                     return;
                 }
                 producto.setQuantity(producto.getQuantity() - quantitySold);
@@ -93,7 +93,7 @@ public class ProductService {
                 return;
             }
         }
-        System.out.println("Producto no encontrado: " + productId);
+        System.out.println("Product not found: " + productId);
     }
 }
 

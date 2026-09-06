@@ -29,6 +29,14 @@ public class PersonService {
      * @param customer cliente que se desea registrar
      */
     public void registerCustomer(Customer customer) {
+
+        for (Person person : personRepository.findAll()) {
+
+            if (person.getID().equals(customer.getID())) {
+                return;
+            }
+        }
+
         personRepository.save(customer);
     }
 

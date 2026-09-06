@@ -8,30 +8,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contiene las reglas de negocio relacionadas con las personas.
+ * Contains the business rules related to people in the GameZone system.
  */
 public class PersonService {
 
     private PersonRepository personRepository;
 
     /**
-     * Crea un servicio de personas utilizando un repositorio.
+     * Creates a people service using a repository.
      *
-     * @param personRepository repositorio utilizado para almacenar las personas
+     * @param personRepository repository used to store people
      */
     public PersonService(PersonRepository personRepository) {
         this.personRepository = personRepository;
     }
 
     /**
-     * Registra un nuevo cliente.
+     * Registers a new customer after validating their information and checking
+     * for duplicate IDs.
      *
-     * @param customer cliente que se desea registrar
+     * @param customer customer to be registered
      */
     public void registerCustomer(Customer customer) {
 
+        // Valida los datos del cliente antes de guardarlo.
         validateCustomer(customer);
 
+        // Comprueba que el ID del cliente no esté registrado.
         for (Person person : personRepository.findAll()) {
 
             if (person.getID().equals(customer.getID())) {
@@ -43,59 +46,67 @@ public class PersonService {
     }
 
     /**
-     * Valida los datos de un cliente antes de registrarlo.
+     * Validates the customer's information before registration.
      *
-     * @param customer cliente cuyos datos se desean validar
-     * @throws IllegalArgumentException si alguno de los datos no cumple con las
-     * reglas de validación
+     * @param customer customer whose information will be validated
+     * @throws IllegalArgumentException if any customer data is invalid
      */
     private void validateCustomer(Customer customer) {
 
+        // Comprueba que el ID no esté vacío.
         if (customer.getID() == null || customer.getID().isBlank()) {
             throw new IllegalArgumentException("ID cannot be empty.");
         }
 
+        // Comprueba que el nombre no esté vacío.
         if (customer.getName() == null || customer.getName().isBlank()) {
             throw new IllegalArgumentException("Name cannot be empty.");
         }
 
+        // Comprueba que el nombre solamente contenga letras y espacios.
         if (!customer.getName().matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+")) {
-            throw new IllegalArgumentException("Name cannot contain numbers or special characters.");
+            throw new IllegalArgumentException(
+                    "Name cannot contain numbers or special characters.");
         }
 
+        // Comprueba que el teléfono no esté vacío.
         if (customer.getPhone() == null || customer.getPhone().isBlank()) {
             throw new IllegalArgumentException("Phone cannot be empty.");
         }
 
+        // Comprueba que el teléfono solamente contenga números.
         if (!customer.getPhone().matches("\\d+")) {
             throw new IllegalArgumentException("Phone must contain only digits.");
         }
 
+        // Comprueba que el correo no esté vacío.
         if (customer.getEmail() == null || customer.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email cannot be empty.");
         }
 
+        // Comprueba que el correo tenga un formato básico válido.
         if (!customer.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
             throw new IllegalArgumentException("Email format is invalid.");
         }
     }
 
     /**
-     * Carga las personas almacenadas previamente.
+     * Loads people previously stored in the repository.
      */
     public void loadPeople() {
         personRepository.load();
     }
 
     /**
-     * Obtiene todos los clientes registrados.
+     * Gets all registered customers.
      *
-     * @return lista de clientes
+     * @return list containing the registered customers
      */
     public List<Customer> listCustomers() {
 
         List<Customer> customers = new ArrayList<>();
 
+        // Recorre las personas y selecciona únicamente los clientes.
         for (Person person : personRepository.findAll()) {
 
             if (person instanceof Customer) {
@@ -107,14 +118,15 @@ public class PersonService {
     }
 
     /**
-     * Obtiene todos los vendedores registrados.
+     * Gets all registered sellers.
      *
-     * @return lista de vendedores
+     * @return list containing the registered sellers
      */
     public List<Seller> listSellers() {
 
         List<Seller> sellers = new ArrayList<>();
 
+        // Recorre las personas y selecciona únicamente los vendedores.
         for (Person person : personRepository.findAll()) {
 
             if (person instanceof Seller) {
@@ -124,5 +136,4 @@ public class PersonService {
 
         return sellers;
     }
-
 }

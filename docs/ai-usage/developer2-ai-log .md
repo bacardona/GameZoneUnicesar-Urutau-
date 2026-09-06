@@ -1,10 +1,11 @@
-# AI Usage Log — Developer 2
+AI Usage Log — Developer 2
 
 This log records AI-assisted decisions taken by the Developer 2 role during the development of the Person module.
 
-### Entry 1
+Entry 1
 
 Date: 2026-09-05
+
 Tool used: ChatGPT
 
 Reason for use: Clarify the structure and responsibilities of the Person module, especially the relationship between Person, Customer, and Seller.
@@ -15,9 +16,10 @@ Prompt used: ¿Qué cambios necesitan las clases Person, Customer y Seller para 
 
 Solution obtained and decision taken: Kept Person as an abstract class with the common attributes id, name, and phone. Customer extends Person and adds email, while Seller extends Person and adds employeeCode and shift. The shared information remains in the parent class and the specific information is handled by each subclass.
 
-### Entry 2
+Entry 2
 
 Date: 2026-09-05
+
 Tool used: ChatGPT
 
 Reason for use: Resolve how PersonRepository should store and load both customers and sellers using file persistence.
@@ -28,9 +30,10 @@ Prompt used: ¿Cómo podemos guardar y cargar clientes y vendedores en PersonRep
 
 Solution obtained and decision taken: Used a type identifier at the beginning of each record, using CUSTOMER for customers and SELLER for sellers. PersonRepository saves the corresponding fields according to the object type and load() reads each line to reconstruct either a Customer or a Seller. The repository also creates the data folder if it does not exist and loads the stored information when the repository is created.
 
-### Entry 3
+Entry 3
 
 Date: 2026-09-05
+
 Tool used: ChatGPT
 
 Reason for use: Define the service methods needed to register and list customers and sellers.
@@ -41,9 +44,10 @@ Prompt used: ¿Cómo quedarían registerCustomer(), listCustomers() y listSeller
 
 Solution obtained and decision taken: Replaced the generic customer registration operation with registerCustomer(Customer) and added listCustomers() and listSellers(). The service filters the people obtained from PersonRepository using the corresponding subclass type and returns lists containing only customers or sellers. This keeps the service as the layer responsible for the operations on people while the repository remains responsible for persistence.
 
-### Entry 4
+Entry 4
 
 Date: 2026-09-05
+
 Tool used: ChatGPT
 
 Reason for use: Verify that the persistence mechanism correctly loads the initial people data when the application starts.
@@ -54,9 +58,10 @@ Prompt used: ¿Cómo podemos comprobar que PersonRepository.load() está cargand
 
 Solution obtained and decision taken: A temporary test was added to create PersonRepository and display the number of loaded people. The result showed three loaded records, confirming that the load operation was reading the initial data correctly. The temporary test code was then removed so it was not included in the final implementation.
 
-### Entry 5
+Entry 5
 
 Date: 2026-09-05
+
 Tool used: ChatGPT
 
 Reason for use: Add a business rule to prevent duplicate customer registrations.
@@ -66,3 +71,4 @@ Problem faced: The original registerCustomer() method sent the customer directly
 Prompt used: ¿Cómo podemos validar que no se registre un cliente con un ID que ya existe?
 
 Solution obtained and decision taken: Modified registerCustomer() so it checks the people already stored in PersonRepository before saving the customer. If another person has the same ID, the method stops the registration; otherwise, the customer is saved normally. This validation was placed in PersonService because it is a business rule rather than a file persistence operation.
+

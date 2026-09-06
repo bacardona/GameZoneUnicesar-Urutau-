@@ -1,7 +1,8 @@
 package com.gamezone.model;
 
 /**
- * Representa un vendedor de GameZone.
+ * Represents a seller in the GameZone system. A seller inherits common person
+ * information and includes an employee code and work shift.
  */
 public class Seller extends Person {
 
@@ -9,53 +10,53 @@ public class Seller extends Person {
     private String shift;
 
     /**
-     * Crea un vendedor con su información básica,
-     * código de empleado y turno de trabajo.
+     * Creates a seller with their basic information, employee code, and work
+     * shift.
      *
-     * @param id identificación del vendedor
-     * @param name nombre del vendedor
-     * @param phone teléfono de contacto del vendedor
-     * @param employeeCode código de empleado
-     * @param shift turno de trabajo
+     * @param id seller's identification
+     * @param name seller's name
+     * @param phone seller's contact phone number
+     * @param employeeCode seller's employee code
+     * @param shift seller's work shift
      */
     public Seller(String id, String name, String phone,
-                  String employeeCode, String shift) {
+            String employeeCode, String shift) {
         super(id, name, phone);
         this.employeeCode = employeeCode;
         this.shift = shift;
     }
 
     /**
-     * Obtiene el código de empleado.
+     * Gets the seller's employee code.
      *
-     * @return código de empleado
+     * @return seller's employee code
      */
     public String getEmployeeCode() {
         return employeeCode;
     }
 
     /**
-     * Modifica el código de empleado.
+     * Updates the seller's employee code.
      *
-     * @param employeeCode nuevo código de empleado
+     * @param employeeCode new employee code
      */
     public void setEmployeeCode(String employeeCode) {
         this.employeeCode = employeeCode;
     }
 
     /**
-     * Obtiene el turno de trabajo.
+     * Gets the seller's work shift.
      *
-     * @return turno de trabajo
+     * @return seller's work shift
      */
     public String getShift() {
         return shift;
     }
 
     /**
-     * Modifica el turno de trabajo.
+     * Updates the seller's work shift.
      *
-     * @param shift nuevo turno de trabajo
+     * @param shift new work shift
      */
     public void setShift(String shift) {
         this.shift = shift;

@@ -38,8 +38,8 @@ public class ProductService {
     public void registerVideoGame(String id, String title, double price, int quantity,
                                    String platform, String genre, String ageRating) {
         // Creamos el videojuego y lo agregamos a la lista en memoria
-        VideoGame nuevo = new VideoGame(id, title, price, quantity, platform, genre, ageRating);
-        products.add(nuevo);
+        VideoGame newVideoGame = new VideoGame(id, title, price, quantity, platform, genre, ageRating);
+        products.add(newVideoGame);
         // Guardamos inmediatamente el cambio en el archivo
         productRepository.save(products);
     }
@@ -57,8 +57,8 @@ public class ProductService {
      */
     public void registerConsole(String id, String title, double price, int quantity,
                                  String brand, String model, String generation) {
-        Console nueva = new Console(id, title, price, quantity, brand, model, generation);
-        products.add(nueva);
+        Console newConsole = new Console(id, title, price, quantity, brand, model, generation);
+        products.add(newConsole);
         productRepository.save(products);
     }
     
@@ -80,15 +80,15 @@ public class ProductService {
     public void updateStock(String productId, int quantitySold) {
         // Buscamos el producto por su id
         for (int i = 0; i < products.size(); i++) {
-            Product producto = products.get(i);
+            Product product = products.get(i);
 
-            if (producto.getId().equals(productId)) {
+            if (product.getId().equals(productId)) {
                 // Validamos que haya suficiente stock antes de descontar
-                if (producto.getQuantity() < quantitySold) {
-                    System.out.println("Not enough stock for: " + producto.getTitle());
+                if (product.getQuantity() < quantitySold) {
+                    System.out.println("Not enough stock for: " + product.getTitle());
                     return;
                 }
-                producto.setQuantity(producto.getQuantity() - quantitySold);
+                product.setQuantity(product.getQuantity() - quantitySold);
                 productRepository.save(products);
                 return;
             }

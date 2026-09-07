@@ -142,3 +142,8 @@ The team follows a lightweight Git Flow: `main` holds the stable release, `devel
 - [Technical Lead](docs/ai-usage/leader-ai-log.md)
 - [Developer 1](docs/ai-usage/developer1-ai-log.md)
 - [Developer 2](docs/ai-usage/developer2-ai-log.md)
+
+
+
+
+3. La relación en el diseño y persistencia, se puede dividir en: Diseño, cuando se registra un accesorio, se valida principalmente que dicho accesorio exista en la tienda, hayan al menos 1 (es decir, cantidad suficiente o existente) y finalmente, se valida que sea compatible con una consola. Hablando de persistencia, lo que ocurre aquí, es el almacenamiento de los accesorios ya registrados, asegurando que se guarden en este caso, en un archivo CSV (.txt) con todos los demás, aparte de permitir su respectiva lectura en caso tal, sea solicitado

@@ -46,4 +46,18 @@ public class BulkPurchaseDiscount extends Promotion {
     public void setPercentage(double percentage) {
         this.percentage = percentage;
     }
+    
+    /**
+     * {@inheritDoc}
+     * Grants the configured percentage over the full total of the sale
+     * only when the number of products in the sale reaches the configured
+     * minimum quantity; otherwise no discount is granted.
+     */
+    @Override
+    public double calculateDiscount(Sale sale) {
+        if (sale.getProducts().size() >= minQuantity) {
+            return sale.calculateTotal() * (percentage / 100.0);
+        }
+        return 0.0;
+    }
 }

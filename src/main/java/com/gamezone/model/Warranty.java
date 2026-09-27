@@ -35,7 +35,52 @@ public abstract class Warranty {
         this.startDate = startDate;
         this.endDate = startDate.plusMonths(getDurationInMonths());
     }
+    
+        /**
+     * Returns the unique identifier of this warranty.
+     *
+     * @return the warranty id
+     */
+    public String getId() {
+        return id;
+    }
 
+    /**
+     * Returns the product covered by this warranty.
+     *
+     * @return the covered product
+     */
+    public Product getProduct() {
+        return product;
+    }
+
+    /**
+     * Returns the sale in which the covered product was purchased.
+     *
+     * @return the associated sale
+     */
+    public Sale getSale() {
+        return sale;
+    }
+
+    /**
+     * Returns the date the warranty coverage begins.
+     *
+     * @return the start date
+     */
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    /**
+     * Returns the date the warranty coverage ends.
+     *
+     * @return the end date
+     */
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+    
     /**
      * Returns the duration of this warranty type, in months. Implemented by
      * each concrete subclass with a fixed value (6 for basic, 12 for

@@ -107,7 +107,7 @@ public abstract class Warranty {
      */
     public abstract double getAdditionalCost();
     
-        /**
+    /**
      * Checks whether this warranty is active on the given date, meaning the
      * date falls between the start and end dates (inclusive).
      *

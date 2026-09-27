@@ -2,6 +2,9 @@ package com.gamezone.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Represents a sale transaction made in the store.
@@ -99,5 +102,20 @@ public class Sale {
             total += product.getPrice();
         }
         return total;
+    }
+    
+    /**
+     * Checks whether this sale can still be returned, meaning today's date
+     * falls within the 30 calendar days following the sale's date
+     * (inclusive). Uses {@link ChronoUnit#DAYS} to compute the difference
+     * between the sale date and today, after converting the legacy
+     * {@code java.util.Date} into a {@code LocalDate}.
+     *
+     * @return true if the sale is still within the 30-day return window
+     */
+    public boolean canBeReturned() {
+        LocalDate saleDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        long daysSinceSale = ChronoUnit.DAYS.between(saleDate, LocalDate.now());
+        return daysSinceSale >= 0 && daysSinceSale <= 30;
     }
 }

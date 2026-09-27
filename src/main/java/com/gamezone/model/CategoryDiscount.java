@@ -46,4 +46,37 @@ public class CategoryDiscount extends Promotion {
     public void setTargetCategory(String targetCategory) {
         this.targetCategory = targetCategory;
     }
+    
+    /**
+     * {@inheritDoc}
+     * Sums the price of only the products in the sale that belong to the
+     * target category, then applies the configured percentage to that
+     * partial sum instead of the full total.
+     */
+    @Override
+    public double calculateDiscount(Sale sale) {
+        double categorySubtotal = 0.0;
+        for (Product product : sale.getProducts()) {
+            if (matchesCategory(product)) {
+                categorySubtotal += product.getPrice();
+            }
+        }
+        return categorySubtotal * (percentage / 100.0);
+    }
+
+    /**
+     * Checks whether a product belongs to this promotion's target category,
+     * using the real runtime type of the product.
+     *
+     * @param product the product to check
+     * @return true if the product's type matches the target category
+     */
+    private boolean matchesCategory(Product product) {
+        if ("VIDEOGAME".equalsIgnoreCase(targetCategory)) {
+            return product instanceof VideoGame;
+        } else if ("CONSOLE".equalsIgnoreCase(targetCategory)) {
+            return product instanceof Console;
+        }
+        return false;
+    }
 }

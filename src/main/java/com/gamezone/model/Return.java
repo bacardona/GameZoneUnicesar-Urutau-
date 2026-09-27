@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,57 +40,68 @@ public class Return {
         this.refundAmount = 0.0;
     }
 
-    /**
-     * Returns the unique identifier of this return.
-     *
-     * @return the return id
-     */
     public String getId() {
         return id;
     }
 
-    /**
-     * Returns the date this return was registered.
-     *
-     * @return the return date
-     */
     public LocalDate getDate() {
         return date;
     }
 
-    /**
-     * Returns the original sale this return references.
-     *
-     * @return the original sale
-     */
     public Sale getOriginalSale() {
         return originalSale;
     }
 
-    /**
-     * Returns an unmodifiable view of the products being returned.
-     *
-     * @return the list of returned products
-     */
     public List<Product> getReturnedProducts() {
         return Collections.unmodifiableList(returnedProducts);
     }
 
-    /**
-     * Returns the reason given for this return.
-     *
-     * @return the return reason
-     */
     public String getReason() {
         return reason;
     }
 
-    /**
-     * Returns the refund amount calculated for this return.
-     *
-     * @return the refund amount, or 0.0 if it has not been calculated yet
-     */
     public double getRefundAmount() {
         return refundAmount;
+    }
+
+    /**
+     * Calculates the refund amount by summing the price of every returned
+     * product, stores the result in the refundAmount attribute, and
+     * returns it.
+     *
+     * @return the calculated refund amount
+     */
+    public double calculateRefundAmount() {
+        double total = 0.0;
+        for (Product product : returnedProducts) {
+            total += product.getPrice();
+        }
+        this.refundAmount = total;
+        return total;
+    }
+
+    /**
+     * Builds a human-readable receipt describing this return: identifier,
+     * date, reference to the original sale, returned products with their
+     * prices, reason, and refunded amount. The receipt text is in Spanish
+     * since it is user-facing.
+     *
+     * @return the formatted return receipt
+     */
+    public String generateReturnReceipt() {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append("----- Recibo de Devolución -----\n");
+        receipt.append("ID de devolución: ").append(id).append("\n");
+        receipt.append("Fecha: ").append(date).append("\n");
+        receipt.append("Venta original: ").append(originalSale.getId()).append("\n");
+        receipt.append("Productos devueltos:\n");
+        for (Product product : returnedProducts) {
+            receipt.append("  - ").append(product.getTitle())
+                    .append(" - $").append(product.getPrice()).append("\n");
+        }
+        receipt.append("Motivo: ").append(reason).append("\n");
+        receipt.append("Monto reembolsado: $").append(refundAmount).append("\n");
+        receipt.append("---------------------------------");
+        return receipt.toString();
     }
 }

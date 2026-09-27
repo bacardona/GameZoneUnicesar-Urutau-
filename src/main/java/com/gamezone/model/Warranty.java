@@ -86,6 +86,11 @@ public abstract class Warranty {
      * each concrete subclass with a fixed value (6 for basic, 12 for
      * extended).
      *
+     * <p><b>Important:</b> because this method is invoked from the
+     * {@code Warranty} constructor before any subclass-specific field is
+     * initialized, every implementation must return a fixed constant and
+     * must never read a field declared in the subclass.</p>
+     *
      * @return the warranty duration in months
      */
     public abstract int getDurationInMonths();
@@ -107,7 +112,7 @@ public abstract class Warranty {
      */
     public abstract double getAdditionalCost();
     
-    /**
+     /**
      * Checks whether this warranty is active on the given date, meaning the
      * date falls between the start and end dates (inclusive).
      *

@@ -36,7 +36,7 @@ public abstract class Warranty {
         this.endDate = startDate.plusMonths(getDurationInMonths());
     }
     
-        /**
+    /**
      * Returns the unique identifier of this warranty.
      *
      * @return the warranty id
@@ -106,4 +106,36 @@ public abstract class Warranty {
      * @return the additional cost of this warranty
      */
     public abstract double getAdditionalCost();
+    
+        /**
+     * Checks whether this warranty is active on the given date, meaning the
+     * date falls between the start and end dates (inclusive).
+     *
+     * @param date the date to check
+     * @return true if the warranty is active on that date
+     */
+    public boolean isActive(LocalDate date) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
+    /**
+     * Builds a human-readable certificate describing this warranty: type,
+     * covered product, associated sale, coverage period, and additional
+     * cost. The text is in Spanish since it is user-facing.
+     *
+     * @return the formatted warranty certificate
+     */
+    public String generateWarrantyCertificate() {
+        StringBuilder certificate = new StringBuilder();
+        certificate.append("----- Certificado de Garantía -----\n");
+        certificate.append("ID de garantía: ").append(id).append("\n");
+        certificate.append("Tipo: ").append(getWarrantyType()).append("\n");
+        certificate.append("Producto cubierto: ").append(product.getTitle()).append("\n");
+        certificate.append("Venta asociada: ").append(sale.getId()).append("\n");
+        certificate.append("Fecha de inicio: ").append(startDate).append("\n");
+        certificate.append("Fecha de fin: ").append(endDate).append("\n");
+        certificate.append("Costo adicional: $").append(getAdditionalCost()).append("\n");
+        certificate.append("------------------------------------");
+        return certificate.toString();
+    }
 }

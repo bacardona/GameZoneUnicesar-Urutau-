@@ -1,6 +1,7 @@
 package com.gamezone.ui;
 
 import com.gamezone.model.Customer;
+import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
@@ -11,8 +12,8 @@ import java.util.function.Predicate;
 /**
  * Console-based user interface for the GameZone system.
  * Displays the main menu and delegates each operation to the
- * corresponding service (PersonService, ProductService, SaleService).
- * Also validates raw user input before it is passed to any service.
+ * corresponding service (PersonService, ProductService, AccessoryService,
+ * SaleService). Also validates raw user input before it is passed to any service.
 **/
 
 public class ConsoleUI {
@@ -20,27 +21,31 @@ public class ConsoleUI {
     private final Scanner scanner;
     private final PersonService personService;
     private final ProductService productService;
+    private final AccessoryService accessoryService;
     private final SaleService saleService;
 
     /**
      * Creates a new ConsoleUI.
-     
+     *
      * @param personService service used to manage customers and sellers
      * @param productService service used to manage products
+     * @param accessoryService service used to manage accessories
      * @param saleService service used to manage sales
     **/
-    
-    public ConsoleUI(PersonService personService, ProductService productService, SaleService saleService) {
+
+    public ConsoleUI(PersonService personService, ProductService productService,
+                     AccessoryService accessoryService, SaleService saleService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
         this.productService = productService;
+        this.accessoryService = accessoryService;
         this.saleService = saleService;
     }
 
     /**
      * Displays the main menu in a loop until the user chooses to exit.
     **/
-    
+
     public void showMainMenu() {
         boolean running = true;
 
@@ -59,6 +64,8 @@ public class ConsoleUI {
             System.out.println("8. View full sales history");
             System.out.println("9. View sales history by customer");
             System.out.println("10. View sales history by seller");
+            System.out.println("--- Accessories ---");
+            System.out.println("11. Accessory management");
             System.out.println("0. Exit");
             System.out.print("Select an option: ");
 
@@ -68,6 +75,7 @@ public class ConsoleUI {
                 case "1", "2", "3" -> showProductMenu(option);
                 case "4", "5", "6" -> showPersonMenu(option);
                 case "7", "8", "9", "10" -> showSaleMenu(option);
+                case "11" -> showAccessoryMenu();
                 case "0" -> {
                     System.out.println("Closing GameZone Unicesar. See you soon!");
                     running = false;
@@ -78,17 +86,17 @@ public class ConsoleUI {
     }
 
 //VALIDACIONES DE AYUDA
-    
+
     /**
      * Repeatedly prompts the user until the entered value satisfies the given
      * validator, printing the error message on every invalid attempt.
-     
+     *
      * @param prompt the message shown when asking for input
      * @param validator the rule the input must satisfy
      * @param errorMessage the message shown when the input is invalid
      * @return the first value entered that passes the validator
     **/
-    
+
     private String readValidated(String prompt, Predicate<String> validator, String errorMessage) {
         System.out.print(prompt);
         String value = scanner.nextLine();
@@ -102,7 +110,7 @@ public class ConsoleUI {
     /**
      * Checks whether a value contains digits only (used for IDs, phone, and employee codes).
     **/
-    
+
     private boolean isNumeric(String value) {
         return value.matches("\\d+");
     }
@@ -110,7 +118,7 @@ public class ConsoleUI {
     /**
      * Checks whether a value is exactly 10 digits long.
     **/
-    
+
     private boolean isValidPhone(String value) {
         return value.matches("\\d{10}");
     }
@@ -118,7 +126,7 @@ public class ConsoleUI {
     /**
      * Checks whether a value contains only letters and spaces, with at least one letter.
     **/
-    
+
     private boolean isValidName(String value) {
         return value.matches("^(?=.*[A-Za-zÁÉÍÓÚáéíóúÑñ])[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$");
     }
@@ -128,7 +136,7 @@ public class ConsoleUI {
      * with at least one non-space character. Used for titles and for the
      * descriptive fields shared by video games and consoles.
     **/
-    
+
     private boolean isAlphanumeric(String value) {
         return value.matches("^(?=.*[A-Za-z0-9])[A-Za-z0-9 ]+$");
     }
@@ -136,7 +144,7 @@ public class ConsoleUI {
     /**
      * Checks whether a value contains an "@" symbol.
     **/
-    
+
     private boolean isValidEmail(String value) {
         return value.contains("@");
     }
@@ -145,7 +153,7 @@ public class ConsoleUI {
      * Reads a price from the console, repeating the prompt until the value
      * is a valid decimal number strictly greater than zero.
     **/
-    
+
     private double readValidPrice() {
         while (true) {
             System.out.print("Price: ");
@@ -166,7 +174,7 @@ public class ConsoleUI {
      * Reads a quantity from the console, repeating the prompt until the value
      * is a valid whole number strictly greater than zero.
     **/
-    
+
     private int readValidQuantity() {
         while (true) {
             System.out.print("Quantity: ");
@@ -190,7 +198,7 @@ public class ConsoleUI {
      *
      * @param option the menu option selected by the user
     **/
-    
+
     private void showProductMenu(String option) {
         switch (option) {
             case "1" -> registerVideoGame();
@@ -203,7 +211,7 @@ public class ConsoleUI {
      * Prompts the user for video game data, validating each field,
      * and registers it through ProductService.
     **/
-    
+
     private void registerVideoGame() {
         System.out.println("\n--- Register Video Game ---");
         String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
@@ -222,7 +230,7 @@ public class ConsoleUI {
      * Prompts the user for console data, validating each field,
      * and registers it through ProductService.
     **/
-    
+
     private void registerConsole() {
         System.out.println("\n--- Register Console ---");
         String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
@@ -240,20 +248,20 @@ public class ConsoleUI {
     /**
      * Prints the description of every product currently in inventory.
     **/
-    
+
     private void listProducts() {
         System.out.println("\n--- Product Inventory ---");
         productService.listProducts().forEach(p -> System.out.println(p.getDescription()));
     }
 
 // GENTE/PERSONAS
-    
+
     /**
      * Displays the person submenu and executes the selected operation.
-     
+     *
      * @param option the menu option selected by the user
     **/
-    
+
     private void showPersonMenu(String option) {
         switch (option) {
             case "4" -> registerCustomer();
@@ -266,7 +274,7 @@ public class ConsoleUI {
      * Prompts the user for customer data, validating each field,
      * builds a Customer object, and registers it through PersonService.
     **/
-    
+
     private void registerCustomer() {
         System.out.println("\n--- Register Customer ---");
         String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
@@ -282,7 +290,7 @@ public class ConsoleUI {
     /**
      * Prints the id and name of every registered customer.
     **/
-    
+
     private void listCustomers() {
         System.out.println("\n--- Customers ---");
         personService.listCustomers().forEach(c -> System.out.println(c.getID() + " - " + c.getName()));
@@ -296,11 +304,107 @@ public class ConsoleUI {
         personService.listSellers().forEach(s -> System.out.println(s.getID() + " - " + s.getName()));
     }
 
+//ACCESORIOS
+
+    /**
+     * Displays the accessory management submenu in a loop until the user
+     * chooses to go back to the main menu.
+    **/
+
+    private void showAccessoryMenu() {
+        boolean back = false;
+
+        while (!back) {
+            System.out.println("\n--- Accessory Management ---");
+            System.out.println("1. Register a controller");
+            System.out.println("2. Register a cable");
+            System.out.println("3. Register a memory");
+            System.out.println("4. List all accessories");
+            System.out.println("5. List accessories by type");
+            System.out.println("6. List accessories compatible with a console");
+            System.out.println("0. Back");
+            System.out.print("Select an option: ");
+
+            switch (scanner.nextLine()) {
+                case "1" -> registerController();
+                case "2" -> registerCable();
+                case "3" -> registerMemory();
+                case "4" -> listAllAccessories();
+                case "5" -> listAccessoriesByType();
+                case "6" -> listCompatibleAccessories();
+                case "0" -> back = true;
+                default -> System.out.println("Invalid option, try again.");
+            }
+        }
+    }
+
+    /**
+     * Registers a controller. PENDING: needs the constructor of Controller.
+    **/
+
+    private void registerController() {
+        // TODO: read the Controller-specific fields, build a Controller and
+        // call accessoryService.registerController(controller).
+        System.out.println("Not implemented yet: register controller.");
+    }
+
+    /**
+     * Registers a cable. PENDING: needs the constructor of Cable.
+    **/
+
+    private void registerCable() {
+        // TODO: read the Cable-specific fields, build a Cable and
+        // call accessoryService.registerCable(cable).
+        System.out.println("Not implemented yet: register cable.");
+    }
+
+    /**
+     * Registers a memory. PENDING: needs the constructor of Memory.
+    **/
+
+    private void registerMemory() {
+        // TODO: read the Memory-specific fields, build a Memory and
+        // call accessoryService.registerMemory(memory).
+        System.out.println("Not implemented yet: register memory.");
+    }
+
+    /**
+     * Prints the description of every registered accessory.
+    **/
+
+    private void listAllAccessories() {
+        System.out.println("\n--- Accessories ---");
+        accessoryService.listAllAccessories().forEach(a -> System.out.println(a.getDescription()));
+    }
+
+    /**
+     * Prompts for an accessory type and prints the accessories of that type.
+    **/
+
+    private void listAccessoriesByType() {
+        String type = readValidated("Type (Controller/Cable/Memory): ",
+                t -> t.equalsIgnoreCase("Controller") || t.equalsIgnoreCase("Cable")
+                        || t.equalsIgnoreCase("Memory"),
+                "Invalid type. Use Controller, Cable or Memory: ");
+        accessoryService.listAccessoriesByType(type)
+                .forEach(a -> System.out.println(a.getDescription()));
+    }
+
+    /**
+     * Prompts for a console id and prints the accessories compatible with it.
+    **/
+
+    private void listCompatibleAccessories() {
+        String consoleId = readValidated("Console ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+        accessoryService.findAccessoriesCompatibleWith(consoleId)
+                .forEach(a -> System.out.println(a.getDescription()));
+    }
+
 //VENTAS
-    
+
     /**
      * Displays the sale submenu and executes the selected operation.
-     
+     *
      * @param option the menu option selected by the user
     **/
     private void showSaleMenu(String option) {
@@ -314,32 +418,32 @@ public class ConsoleUI {
 
     /**
      * Prompts the user for a customer id, a seller id, and one or more
-     * product ids (each validated as numeric), then attempts to register
-     * the sale through SaleService, printing a friendly message if any
-     * business rule is violated.
+     * product or accessory ids (each validated as numeric), then attempts to
+     * register the sale through SaleService, printing a friendly message if
+     * any business rule is violated.
     **/
-    
+
     private void registerSale() {
         System.out.println("\n--- Register Sale ---");
         String customerId = readValidated("Customer ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
         String sellerId = readValidated("Seller ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
 
-        java.util.List<String> productIds = new java.util.ArrayList<>();
-        boolean addingProducts = true;
-        while (addingProducts) {
-            System.out.print("Product ID (empty to finish): ");
-            String productId = scanner.nextLine();
-            if (productId.isBlank()) {
-                addingProducts = false;
-            } else if (!isNumeric(productId)) {
+        java.util.List<String> itemIds = new java.util.ArrayList<>();
+        boolean addingItems = true;
+        while (addingItems) {
+            System.out.print("Product or accessory ID (empty to finish): ");
+            String itemId = scanner.nextLine();
+            if (itemId.isBlank()) {
+                addingItems = false;
+            } else if (!isNumeric(itemId)) {
                 System.out.println("Invalid ID. Numbers only.");
             } else {
-                productIds.add(productId);
+                itemIds.add(itemId);
             }
         }
 
         try {
-            var sale = saleService.registerSale(customerId, sellerId, productIds);
+            var sale = saleService.registerSale(customerId, sellerId, itemIds);
             System.out.println("Sale registered. Total: " + sale.calculateTotal());
         } catch (IllegalArgumentException e) {
             System.out.println("Could not register sale: " + e.getMessage());
@@ -349,7 +453,7 @@ public class ConsoleUI {
     /**
      * Prints the complete sales history.
     **/
-    
+
     private void viewFullHistory() {
         System.out.println("\n--- Full Sales History ---");
         saleService.getAllSales().forEach(this::printSale);
@@ -358,7 +462,7 @@ public class ConsoleUI {
     /**
      * Prompts for a customer id and prints that customer's purchase history.
     **/
-    
+
     private void viewHistoryByCustomer() {
         String customerId = readValidated("Customer ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
         saleService.getSalesByCustomer(customerId).forEach(this::printSale);
@@ -367,7 +471,7 @@ public class ConsoleUI {
     /**
      * Prompts for a seller id and prints the sales that seller attended.
     **/
-    
+
     private void viewHistoryBySeller() {
         String sellerId = readValidated("Seller ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
         saleService.getSalesBySeller(sellerId).forEach(this::printSale);
@@ -376,7 +480,7 @@ public class ConsoleUI {
     /**
      * Prints a single sale in a readable, one-line format, used by all
      * three history views to avoid repeating the same formatting logic.
-     
+     *
      * @param sale the sale to print
      */
     private void printSale(com.gamezone.model.Sale sale) {

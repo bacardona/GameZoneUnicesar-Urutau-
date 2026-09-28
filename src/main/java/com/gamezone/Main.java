@@ -4,12 +4,16 @@ import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
+import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.SaleRepository;
+import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
 import com.gamezone.ui.ConsoleUI;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +24,7 @@ import java.util.List;
 
 //Desde aqui empieza el main
 public class Main {
-    
+
      /**
      * Starts the application: builds the dependency graph
      * (repositories -> services -> UI), loads previously stored data,
@@ -28,27 +32,33 @@ public class Main {
      *
      * @param args command-line arguments (not used)
     **/
-    
+
     public static void main(String[] args) {
 // --- Persistence + Service layers (Product and Person load themselves) --- //
-        PersonRepository personRepository = new PersonRepository(); 
+        PersonRepository personRepository = new PersonRepository();
         PersonService personService = new PersonService(personRepository);
-        ProductService productService = new ProductService(); 
+        ProductService productService = new ProductService();
+        AccessoryRepository accessoryRepository = new AccessoryRepository();
+        AccessoryService accessoryService = new AccessoryService(accessoryRepository);
         SaleRepository saleRepository = new SaleRepository();
 
-// --- Obtain pre-filtered lists through the services --- // 
+// --- Obtain pre-filtered lists through the services --- //
         List<Customer> customers = personService.listCustomers();
         List<Seller> sellers = personService.listSellers();
-        List<Product> products = productService.listProducts();
-        List<Sale> sales = saleRepository.load(customers, sellers, products);
+
+        // Products and accessories are both sellable, so sales are reloaded against both
+        List<Product> sellableItems = new ArrayList<>(productService.listProducts());
+        sellableItems.addAll(accessoryService.listAllAccessories());
+        List<Sale> sales = saleRepository.load(customers, sellers, sellableItems);
 
         checkPreloadedSellers(sellers);
 
 // --- Sale service ---
-        SaleService saleService = new SaleService(saleRepository, productService, personService, sales);
+        SaleService saleService = new SaleService(saleRepository, productService,
+                accessoryService, personService, sales);
 
         // --- UI layer ---
-        ConsoleUI consoleUI = new ConsoleUI(personService, productService, saleService);
+        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, saleService);
         consoleUI.showMainMenu();
     }
 
@@ -58,7 +68,7 @@ public class Main {
      *
      * @param sellers the list of sellers loaded at startup
      */
-    
+
 //Esto es para los datos precargados, ojo
     private static void checkPreloadedSellers(List<Seller> sellers) {
         if (sellers.size() < 3) {
@@ -67,4 +77,3 @@ public class Main {
         }
     }
 }
-

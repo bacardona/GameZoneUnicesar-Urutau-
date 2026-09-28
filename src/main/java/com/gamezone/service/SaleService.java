@@ -32,7 +32,7 @@ public class SaleService {
     private final ProductService productService;
     private final AccessoryService accessoryService;
     private final PromotionService promotionService;
-    private final WarrantyService warrantyService;
+    private WarrantyService warrantyService;
     private final PersonService personService;
     private final List<Sale> sales;
 
@@ -43,22 +43,33 @@ public class SaleService {
      * @param productService service used to validate and update product stock
      * @param accessoryService service used to validate and update accessory stock
      * @param promotionService service used to find the best promotion for a sale
-     * @param warrantyService service used to assign warranties to the consoles sold
      * @param personService service used to resolve customers and sellers
      * @param initialSales sales previously loaded at application startup
      **/
 
     public SaleService(SaleRepository saleRepository, ProductService productService,
                         AccessoryService accessoryService, PromotionService promotionService,
-                        WarrantyService warrantyService, PersonService personService,
-                        List<Sale> initialSales) {
+                        PersonService personService, List<Sale> initialSales) {
         this.saleRepository = saleRepository;
         this.productService = productService;
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
-        this.warrantyService = warrantyService;
         this.personService = personService;
         this.sales = new ArrayList<>(initialSales);
+    }
+
+    /**
+     * Sets the service used to assign warranties to the consoles sold.
+     * It is injected after construction because WarrantyRepository needs a
+     * SaleService and SaleService needs a WarrantyService (circular
+     * dependency). This setter is a temporary workaround until adjustment A2
+     * removes the cycle.
+     *
+     * @param warrantyService service used to assign warranties
+     **/
+
+    public void setWarrantyService(WarrantyService warrantyService) {
+        this.warrantyService = warrantyService;
     }
 
     /**
@@ -88,6 +99,10 @@ public class SaleService {
     //Registra una nueva venta (productos y/o accesorios) despues de validar las reglas
     public Sale registerSale(String customerId, String sellerId, List<String> itemIds,
                              List<String> productIdsWithExtendedWarranty) {
+        if (warrantyService == null) {
+            throw new IllegalStateException("WarrantyService has not been set.");
+        }
+
         if (itemIds == null || itemIds.isEmpty()) {
             throw new IllegalArgumentException("A sale must contain at least one product.");
         }

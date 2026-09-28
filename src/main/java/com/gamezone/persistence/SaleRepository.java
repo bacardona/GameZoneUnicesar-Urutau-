@@ -81,7 +81,8 @@ public class SaleRepository {
     /**
      * Converts a Sale into a single CSV line, storing only the IDs of its
      * related customer, seller, and products instead of the full objects,
-     * plus the applied promotion name (empty if none) and the discount amount.
+     * plus the applied promotion name (empty if none), the discount amount and
+     * the extended warranties cost.
      *
      * @param sale the sale to convert
      * @return the CSV representation of the sale
@@ -109,7 +110,8 @@ public class SaleRepository {
                 sale.getSeller().getID(),
                 productIds.toString(),
                 promotionName,
-                String.valueOf(sale.getDiscountAmount()));
+                String.valueOf(sale.getDiscountAmount()),
+                String.valueOf(sale.getExtendedWarrantyCost()));
     }
 
     /**
@@ -153,6 +155,10 @@ public class SaleRepository {
                 sale.setAppliedPromotionName(fields[5]);
             }
             sale.setDiscountAmount(Double.parseDouble(fields[6]));
+        }
+        // Field 7 only exists in sales saved after warranties were added
+        if (fields.length >= 8) {
+            sale.setExtendedWarrantyCost(Double.parseDouble(fields[7]));
         }
         return sale;
     }

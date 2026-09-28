@@ -1,13 +1,17 @@
 package com.gamezone.service;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
+import com.gamezone.model.ExtendedWarranty;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.SaleRepository;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +32,7 @@ public class SaleService {
     private final ProductService productService;
     private final AccessoryService accessoryService;
     private final PromotionService promotionService;
+    private WarrantyService warrantyService;
     private final PersonService personService;
     private final List<Sale> sales;
 
@@ -54,26 +59,50 @@ public class SaleService {
     }
 
     /**
+     * Sets the service used to assign warranties to the consoles sold.
+     * It is injected after construction because WarrantyRepository needs a
+     * SaleService and SaleService needs a WarrantyService (circular
+     * dependency). This setter is a temporary workaround until adjustment A2
+     * removes the cycle.
+     *
+     * @param warrantyService service used to assign warranties
+     **/
+
+    public void setWarrantyService(WarrantyService warrantyService) {
+        this.warrantyService = warrantyService;
+    }
+
+    /**
      * Registers a new sale containing products and/or accessories. Every item
      * is resolved and its stock validated BEFORE any inventory is modified,
      * so a failed validation never leaves the inventory partially updated.
      * The best active promotion (highest discount) is applied automatically
-     * over the subtotal. On success, the inventory is decreased automatically
+     * over the subtotal. Every console gets a free basic warranty and, when
+     * requested, an extended warranty whose cost is added to the total.
+     * On success, the inventory is decreased automatically
      * and the sale is persisted.
      *
      * @param customerId the id of the customer making the purchase
      * @param sellerId the id of the seller attending the sale
      * @param itemIds the ids of the purchased products or accessories; a
      *                repeated id represents more than one unit of that item
+     * @param productIdsWithExtendedWarranty ids of the consoles that get an extended
+     *                warranty; a console id repeated N times requests N extended warranties
      * @return the newly registered Sale
      * @throws IllegalArgumentException if the sale has no items, the
      *                                   customer/seller does not exist, an
      *                                   item does not exist, or stock is
-     *                                   insufficient for any item
+     *                                   insufficient for any item, or an extended
+     *                                   warranty is requested for a non-console item
      **/
 
     //Registra una nueva venta (productos y/o accesorios) despues de validar las reglas
-    public Sale registerSale(String customerId, String sellerId, List<String> itemIds) {
+    public Sale registerSale(String customerId, String sellerId, List<String> itemIds,
+                             List<String> productIdsWithExtendedWarranty) {
+        if (warrantyService == null) {
+            throw new IllegalStateException("WarrantyService has not been set.");
+        }
+
         if (itemIds == null || itemIds.isEmpty()) {
             throw new IllegalArgumentException("A sale must contain at least one product.");
         }
@@ -89,6 +118,19 @@ public class SaleService {
         }
 
         Map<String, Integer> quantitiesById = countQuantities(itemIds);
+
+        // Extended warranties can only be requested for consoles that are part of the sale
+        Map<String, Integer> extendedRequests = countQuantities(
+                productIdsWithExtendedWarranty == null ? new ArrayList<>() : productIdsWithExtendedWarranty);
+        for (Map.Entry<String, Integer> entry : extendedRequests.entrySet()) {
+            Product requested = findProductById(entry.getKey());
+            if (!(requested instanceof Console)
+                    || quantitiesById.getOrDefault(entry.getKey(), 0) < entry.getValue()) {
+                throw new IllegalArgumentException(
+                        "Extended warranty is only available for consoles included in the sale: "
+                                + entry.getKey());
+            }
+        }
 
         // Resolve every id (product or accessory) and validate its stock
         Map<String, Product> resolvedItems = new HashMap<>();
@@ -120,6 +162,23 @@ public class SaleService {
             sale.setAppliedPromotionName(bestPromotion.getName());
             sale.setDiscountAmount(discount);
         }
+
+        // Warranties: a basic one for every console, plus the extended ones requested
+        LocalDate warrantyStart = sale.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        Map<String, Integer> pendingExtended = new HashMap<>(extendedRequests);
+        double extendedWarrantyCost = 0.0;
+        for (Product item : items) {
+            if (item instanceof Console) {
+                warrantyService.assignBasicWarranty(item, sale, warrantyStart);
+                int pending = pendingExtended.getOrDefault(item.getId(), 0);
+                if (pending > 0) {
+                    ExtendedWarranty extended = warrantyService.assignExtendedWarranty(item, sale, warrantyStart);
+                    extendedWarrantyCost += extended.getAdditionalCost();
+                    pendingExtended.put(item.getId(), pending - 1);
+                }
+            }
+        }
+        sale.setExtendedWarrantyCost(extendedWarrantyCost);
 
         // Update inventory delegating according to the real type of each item
         for (Map.Entry<String, Integer> entry : quantitiesById.entrySet()) {

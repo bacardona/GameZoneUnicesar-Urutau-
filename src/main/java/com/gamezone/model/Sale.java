@@ -23,6 +23,7 @@ public class Sale {
     private List<Product> products;
     private String appliedPromotionName;
     private double discountAmount;
+    private double extendedWarrantyCost;
 
     /**
      * Creates a new Sale with no promotion applied.
@@ -41,6 +42,7 @@ public class Sale {
         this.products = products;
         this.appliedPromotionName = null;
         this.discountAmount = 0.0;
+        this.extendedWarrantyCost = 0.0;
     }
 
     /**
@@ -139,6 +141,30 @@ public class Sale {
     }
 
     /**
+     * Returns the total cost of the extended warranties purchased with this sale.
+     *
+     * @return the extended warranties cost (0 if none was purchased)
+     **/
+
+    public double getExtendedWarrantyCost() {
+        return extendedWarrantyCost;
+    }
+
+    /**
+     * Sets the total cost of the extended warranties purchased with this sale.
+     *
+     * @param extendedWarrantyCost the cost, which cannot be negative
+     * @throws IllegalArgumentException if the cost is negative
+     **/
+
+    public void setExtendedWarrantyCost(double extendedWarrantyCost) {
+        if (extendedWarrantyCost < 0) {
+            throw new IllegalArgumentException("Extended warranty cost cannot be negative.");
+        }
+        this.extendedWarrantyCost = extendedWarrantyCost;
+    }
+
+    /**
      * Calculates the subtotal of the sale by summing the price of each product,
      * BEFORE any discount. If the same product was bought more than once, it
      * must appear repeated in the products list. Promotions rely on this value
@@ -158,14 +184,15 @@ public class Sale {
     }
 
     /**
-     * Calculates the final amount to pay: the subtotal minus the discount
-     * granted by the applied promotion.
+     * Calculates the final amount to pay: the subtotal, minus the discount
+     * granted by the applied promotion, plus the cost of the extended warranties.
+     * The discount is computed over the subtotal only, never over warranties.
      *
      * @return the final total of the sale
      **/
 
     public double calculateFinalTotal() {
-        return calculateTotal() - discountAmount;
+        return calculateTotal() - discountAmount + extendedWarrantyCost;
     }
 
     /**
@@ -194,6 +221,9 @@ public class Sale {
             receipt.append(String.format(Locale.US, "Discount (%s): -$%.2f%n", appliedPromotionName, discountAmount));
         } else {
             receipt.append("Discount: none\n");
+        }
+        if (extendedWarrantyCost > 0) {
+            receipt.append(String.format(Locale.US, "Extended warranties: +$%.2f%n", extendedWarrantyCost));
         }
         receipt.append(String.format(Locale.US, "TOTAL: $%.2f%n", calculateFinalTotal()));
         receipt.append("=============================");

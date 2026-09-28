@@ -8,11 +8,13 @@ import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.PromotionRepository;
 import com.gamezone.persistence.SaleRepository;
+import com.gamezone.persistence.WarrantyRepository;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.WarrantyService;
 import com.gamezone.ui.ConsoleUI;
 
 import java.util.ArrayList;
@@ -61,8 +63,14 @@ public class Main {
         SaleService saleService = new SaleService(saleRepository, productService,
                 accessoryService, promotionService, personService, sales);
 
+        // WarrantyRepository needs SaleService and SaleService needs WarrantyService.
+        // The cycle is broken temporarily with a setter (adjustment A2 removes it).
+        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
+        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
+        saleService.setWarrantyService(warrantyService);
+
         // --- UI layer ---
-        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, promotionService, saleService);
+        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, promotionService, warrantyService, saleService);
         consoleUI.showMainMenu();
     }
 

@@ -11,11 +11,13 @@ import com.gamezone.model.Memory;
 import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.Warranty;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.WarrantyService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -38,6 +40,7 @@ public class ConsoleUI {
     private final ProductService productService;
     private final AccessoryService accessoryService;
     private final PromotionService promotionService;
+    private final WarrantyService warrantyService;
     private final SaleService saleService;
 
     /**
@@ -47,17 +50,19 @@ public class ConsoleUI {
      * @param productService service used to manage products
      * @param accessoryService service used to manage accessories
      * @param promotionService service used to manage promotions
+     * @param warrantyService service used to query warranties
      * @param saleService service used to manage sales
     **/
 
     public ConsoleUI(PersonService personService, ProductService productService,
                      AccessoryService accessoryService, PromotionService promotionService,
-                     SaleService saleService) {
+                     WarrantyService warrantyService, SaleService saleService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
         this.productService = productService;
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
+        this.warrantyService = warrantyService;
         this.saleService = saleService;
     }
 
@@ -87,6 +92,8 @@ public class ConsoleUI {
             System.out.println("11. Accessory management");
             System.out.println("--- Promotions ---");
             System.out.println("12. Promotion management");
+            System.out.println("--- Warranties ---");
+            System.out.println("13. Warranty management");
             System.out.println("0. Exit");
             System.out.print("Select an option: ");
 
@@ -98,6 +105,7 @@ public class ConsoleUI {
                 case "7", "8", "9", "10" -> showSaleMenu(option);
                 case "11" -> showAccessoryMenu();
                 case "12" -> showPromotionMenu();
+                case "13" -> showWarrantyMenu();
                 case "0" -> {
                     System.out.println("Closing GameZone Unicesar. See you soon!");
                     running = false;
@@ -755,6 +763,119 @@ public class ConsoleUI {
         }
     }
 
+//GARANTIAS
+
+    /**
+     * Asks, for every console unit in the sale, whether the customer wants
+     * the extended warranty. Every console already gets the basic warranty
+     * automatically.
+     *
+     * @param itemIds the ids of the items in the sale (a repeated id is one unit each)
+     * @return the ids of the consoles that requested an extended warranty
+    **/
+
+    private java.util.List<String> askExtendedWarranties(java.util.List<String> itemIds) {
+        java.util.List<String> extendedIds = new java.util.ArrayList<>();
+        java.util.Map<String, Integer> unitByConsole = new java.util.HashMap<>();
+
+        for (String id : itemIds) {
+            if (!isExistingConsole(id)) {
+                continue;
+            }
+            int unit = unitByConsole.merge(id, 1, Integer::sum);
+            String answer = readValidated(
+                    "Extended warranty for console " + findProductTitle(id) + " (unit " + unit
+                            + ", 12 months, +10% of the price)? (y/n): ",
+                    a -> a.equalsIgnoreCase("y") || a.equalsIgnoreCase("n"),
+                    "Invalid answer. Enter y or n: ");
+            if (answer.equalsIgnoreCase("y")) {
+                extendedIds.add(id);
+            }
+        }
+        return extendedIds;
+    }
+
+    /**
+     * Returns the title of the product with the given id, or the id itself if not found.
+    **/
+
+    private String findProductTitle(String id) {
+        for (Product p : productService.listProducts()) {
+            if (p.getId().equals(id)) {
+                return p.getTitle();
+            }
+        }
+        return id;
+    }
+
+    /**
+     * Displays the warranty management submenu in a loop until the user
+     * chooses to go back to the main menu.
+    **/
+
+    private void showWarrantyMenu() {
+        boolean back = false;
+
+        while (!back) {
+            System.out.println("\n--- Warranty Management ---");
+            System.out.println("1. List all warranties");
+            System.out.println("2. List active warranties");
+            System.out.println("3. List warranties expiring soon");
+            System.out.println("4. Find the warranty of a product in a sale");
+            System.out.println("0. Back");
+            System.out.print("Select an option: ");
+
+            switch (scanner.nextLine()) {
+                case "1" -> listWarranties(warrantyService.listAllWarranties(), "All Warranties");
+                case "2" -> listWarranties(warrantyService.listActiveWarranties(), "Active Warranties");
+                case "3" -> listExpiringWarranties();
+                case "4" -> findWarrantyByProduct();
+                case "0" -> back = true;
+                default -> System.out.println("Invalid option, try again.");
+            }
+        }
+    }
+
+    /**
+     * Prints a list of warranties under the given title.
+    **/
+
+    private void listWarranties(java.util.List<Warranty> warranties, String title) {
+        System.out.println("\n--- " + title + " ---");
+        if (warranties.isEmpty()) {
+            System.out.println("No warranties found.");
+        }
+        warranties.forEach(w -> System.out.println(w.getWarrantyType() + " | "
+                + w.getProduct().getTitle() + " | Sale: " + w.getSale().getId() + " | "
+                + w.getStartDate() + " to " + w.getEndDate()
+                + " | Extra cost: $" + w.getAdditionalCost()));
+    }
+
+    /**
+     * Prompts for a number of days and lists the warranties that expire within them.
+    **/
+
+    private void listExpiringWarranties() {
+        int days = readValidPositiveInt("Days ahead: ");
+        listWarranties(warrantyService.listWarrantiesExpiringSoon(days),
+                "Warranties expiring in the next " + days + " days");
+    }
+
+    /**
+     * Prompts for a product id and a sale id and prints the matching warranty certificate.
+    **/
+
+    private void findWarrantyByProduct() {
+        String productId = readValidated("Product ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+        String saleId = readValidated("Sale ID: ", v -> !v.isBlank(), "Sale ID cannot be empty: ");
+        Warranty warranty = warrantyService.findWarrantyByProduct(productId, saleId.trim());
+        if (warranty == null) {
+            System.out.println("No warranty found for that product in that sale.");
+        } else {
+            System.out.println(warranty.generateWarrantyCertificate());
+        }
+    }
+
 //VENTAS
 
     /**
@@ -797,8 +918,10 @@ public class ConsoleUI {
             }
         }
 
+        java.util.List<String> extendedWarrantyIds = askExtendedWarranties(itemIds);
+
         try {
-            var sale = saleService.registerSale(customerId, sellerId, itemIds);
+            var sale = saleService.registerSale(customerId, sellerId, itemIds, extendedWarrantyIds);
             System.out.println("\nSale registered.\n" + sale.generateReceipt());
         } catch (IllegalArgumentException e) {
             System.out.println("Could not register sale: " + e.getMessage());

@@ -1,5 +1,6 @@
 package com.gamezone.service;
 
+import com.gamezone.model.Accessory;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
@@ -15,8 +16,8 @@ import java.util.UUID;
 
 /**
  * Provides business logic for registering and querying sales.
- * Coordinates with ProductService (stock validation and update) and
- * PersonService (customer/seller lookup) to enforce the sale rules.
+ * Coordinates with ProductService and AccessoryService (stock validation and
+ * update) and PersonService (customer/seller lookup) to enforce the sale rules.
  **/
 
 //Encargado de la logica principal
@@ -24,6 +25,7 @@ public class SaleService {
 
     private final SaleRepository saleRepository;
     private final ProductService productService;
+    private final AccessoryService accessoryService;
     private final PersonService personService;
     private final List<Sale> sales;
 
@@ -32,38 +34,42 @@ public class SaleService {
      *
      * @param saleRepository repository used to persist sales
      * @param productService service used to validate and update product stock
+     * @param accessoryService service used to validate and update accessory stock
      * @param personService service used to resolve customers and sellers
      * @param initialSales sales previously loaded at application startup
      **/
-    
+
     public SaleService(SaleRepository saleRepository, ProductService productService,
-                        PersonService personService, List<Sale> initialSales) {
+                        AccessoryService accessoryService, PersonService personService,
+                        List<Sale> initialSales) {
         this.saleRepository = saleRepository;
         this.productService = productService;
+        this.accessoryService = accessoryService;
         this.personService = personService;
         this.sales = new ArrayList<>(initialSales);
     }
 
     /**
-     * Registers a new sale after validating business rules: the sale must
-     * contain at least one product, the customer and seller must exist,
-     * and there must be enough stock for each requested product.
+     * Registers a new sale containing products and/or accessories. Every item
+     * is resolved and its stock validated BEFORE any inventory is modified,
+     * so a failed validation never leaves the inventory partially updated.
      * On success, the inventory is decreased automatically and the sale
      * is persisted.
      *
      * @param customerId the id of the customer making the purchase
      * @param sellerId the id of the seller attending the sale
-     * @param productIds the ids of the purchased products; a repeated id
-     *                    represents more than one unit of that product
+     * @param itemIds the ids of the purchased products or accessories; a
+     *                repeated id represents more than one unit of that item
      * @return the newly registered Sale
-     * @throws IllegalArgumentException if the sale has no products, the
-     *                                   customer/seller does not exist, or
-     *                                   stock is insufficient for any product
+     * @throws IllegalArgumentException if the sale has no items, the
+     *                                   customer/seller does not exist, an
+     *                                   item does not exist, or stock is
+     *                                   insufficient for any item
      **/
-    
-    //Encargado de registrar una nueva venta despues de validar con las reglas descritas, arrojando una respuestas dependiendo del resultado
-    public Sale registerSale(String customerId, String sellerId, List<String> productIds) {
-        if (productIds == null || productIds.isEmpty()) {
+
+    //Registra una nueva venta (productos y/o accesorios) despues de validar las reglas
+    public Sale registerSale(String customerId, String sellerId, List<String> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
             throw new IllegalArgumentException("A sale must contain at least one product.");
         }
 
@@ -77,25 +83,34 @@ public class SaleService {
             throw new IllegalArgumentException("Seller not found: " + sellerId);
         }
 
-        Map<String, Integer> quantitiesByProductId = countQuantities(productIds);
+        Map<String, Integer> quantitiesById = countQuantities(itemIds);
 
-        for (Map.Entry<String, Integer> entry : quantitiesByProductId.entrySet()) {
-            if (!hasSufficientStock(entry.getKey(), entry.getValue())) {
+        // Resolve every id (product or accessory) and validate its stock
+        Map<String, Product> resolvedItems = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : quantitiesById.entrySet()) {
+            Product item = findSellableById(entry.getKey());
+            if (item == null) {
                 throw new IllegalArgumentException(
-                        "Insufficient stock for product: " + entry.getKey());
+                        "Product or accessory not found: " + entry.getKey());
             }
+            if (item.getQuantity() < entry.getValue()) {
+                throw new IllegalArgumentException(
+                        "Insufficient stock for: " + item.getTitle());
+            }
+            resolvedItems.put(entry.getKey(), item);
         }
 
-        List<Product> products = new ArrayList<>();
-        for (String productId : productIds) {
-            products.add(findProductById(productId));
+        List<Product> items = new ArrayList<>();
+        for (String id : itemIds) {
+            items.add(resolvedItems.get(id));
         }
 
-        for (Map.Entry<String, Integer> entry : quantitiesByProductId.entrySet()) {
-            productService.updateStock(entry.getKey(), entry.getValue());
+        // Update inventory delegating according to the real type of each item
+        for (Map.Entry<String, Integer> entry : quantitiesById.entrySet()) {
+            updateInventory(resolvedItems.get(entry.getKey()), entry.getValue());
         }
 
-        Sale sale = new Sale(UUID.randomUUID().toString(), new Date(), customer, seller, products);
+        Sale sale = new Sale(UUID.randomUUID().toString(), new Date(), customer, seller, items);
         sales.add(sale);
         saleRepository.save(sales);
 
@@ -108,7 +123,7 @@ public class SaleService {
      * @param customerId the id of the customer
      * @return the list of sales made by that customer
      **/
-    
+
     public List<Sale> getSalesByCustomer(String customerId) {
         List<Sale> result = new ArrayList<>();
         for (Sale sale : sales) {
@@ -125,7 +140,7 @@ public class SaleService {
      * @param sellerId the id of the seller
      * @return the list of sales attended by that seller
     **/
-    
+
     public List<Sale> getSalesBySeller(String sellerId) {
         List<Sale> result = new ArrayList<>();
         for (Sale sale : sales) {
@@ -141,27 +156,60 @@ public class SaleService {
      *
      * @return the full list of registered sales
      **/
-    
+
     public List<Sale> getAllSales() {
         return new ArrayList<>(sales);
     }
 
     /**
-     * Counts how many times each product id appears in the requested list,
-     * so that buying the same product multiple times is treated as one
+     * Counts how many times each id appears in the requested list,
+     * so that buying the same item multiple times is treated as one
      * stock check for the total quantity instead of several separate checks.
      *
-     * @param productIds the raw list of requested product ids
-     * @return a map from product id to the quantity requested
+     * @param itemIds the raw list of requested ids
+     * @return a map from id to the quantity requested
     **/
-    
-    //Encargado de contar cuantas veces un ID de producto aparece en una lista, para asi que un producto que aparece en una lista varias veces sea tratado en un solo stock
-    private Map<String, Integer> countQuantities(List<String> productIds) {
+
+    //Cuenta cuantas veces aparece cada ID para validar el stock una sola vez por item
+    private Map<String, Integer> countQuantities(List<String> itemIds) {
         Map<String, Integer> counts = new HashMap<>();
-        for (String id : productIds) {
+        for (String id : itemIds) {
             counts.merge(id, 1, Integer::sum);
         }
         return counts;
+    }
+
+    /**
+     * Decreases the stock of an item, delegating to the service that owns
+     * its real type. The Accessory check goes first because every Accessory
+     * is also a Product.
+     *
+     * @param item the item being sold
+     * @param quantity the quantity sold
+    **/
+
+    private void updateInventory(Product item, int quantity) {
+        if (item instanceof Accessory) {
+            accessoryService.updateStock(item.getId(), quantity);
+        } else {
+            productService.updateStock(item.getId(), quantity);
+        }
+    }
+
+    /**
+     * Searches for a sellable item by id, looking first among products
+     * and then among accessories.
+     *
+     * @param id the id to search for
+     * @return the matching product or accessory, or null if not found
+    **/
+
+    private Product findSellableById(String id) {
+        Product product = findProductById(id);
+        if (product != null) {
+            return product;
+        }
+        return accessoryService.findById(id);
     }
 
     /**
@@ -171,7 +219,7 @@ public class SaleService {
      * @param customerId the id to search for
      * @return the matching customer, or null if not found
     **/
-    
+
     //Buscar cliente por ID
     private Customer findCustomerById(String customerId) {
         for (Customer c : personService.listCustomers()) {
@@ -189,7 +237,7 @@ public class SaleService {
      * @param sellerId the id to search for
      * @return the matching seller, or null if not found
     **/
-    
+
     //Buscar vendedor por ID
     private Seller findSellerById(String sellerId) {
         for (Seller s : personService.listSellers()) {
@@ -207,7 +255,7 @@ public class SaleService {
      * @param productId the id to search for
      * @return the matching product, or null if not found
     **/
-    
+
     //Buscar un producto por ID
     private Product findProductById(String productId) {
         for (Product p : productService.listProducts()) {
@@ -216,20 +264,5 @@ public class SaleService {
             }
         }
         return null;
-    }
-
-    /**
-     * Checks whether the current stock of a product is enough to cover
-     * the requested quantity.
-     *
-     * @param productId the id of the product to check
-     * @param quantityNeeded the quantity being requested
-     * @return true if enough stock is available, false otherwise
-    **/
-    
-    //Validar que la cantidad requerida sea suficiente (productos)
-    private boolean hasSufficientStock(String productId, int quantityNeeded) {
-        Product product = findProductById(productId);
-        return product != null && product.getQuantity() >= quantityNeeded;
     }
 }

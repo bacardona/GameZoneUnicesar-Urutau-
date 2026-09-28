@@ -46,8 +46,6 @@ public class Main {
         AccessoryService accessoryService = new AccessoryService(accessoryRepository);
         PromotionRepository promotionRepository = new PromotionRepository();
         PromotionService promotionService = new PromotionService(promotionRepository);
-        WarrantyRepository warrantyRepository = new WarrantyRepository();
-        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
         SaleRepository saleRepository = new SaleRepository();
 
 // --- Obtain pre-filtered lists through the services --- //
@@ -63,7 +61,13 @@ public class Main {
 
 // --- Sale service ---
         SaleService saleService = new SaleService(saleRepository, productService,
-                accessoryService, promotionService, warrantyService, personService, sales);
+                accessoryService, promotionService, personService, sales);
+
+        // WarrantyRepository needs SaleService and SaleService needs WarrantyService.
+        // The cycle is broken temporarily with a setter (adjustment A2 removes it).
+        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
+        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
+        saleService.setWarrantyService(warrantyService);
 
         // --- UI layer ---
         ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, promotionService, warrantyService, saleService);

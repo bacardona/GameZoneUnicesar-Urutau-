@@ -95,5 +95,25 @@ public class ProductService {
         }
         System.out.println("Product not found: " + productId);
     }
+    /**
+     * Increases the stock of a product, used when a return is registered.
+     *
+     * @param productId id of the product being restored
+     * @param quantity  quantity to add back to the stock
+     * @throws IllegalArgumentException if the quantity is not positive or the product does not exist
+     */
+    public void restoreStock(String productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero.");
+        }
+        for (Product product : products) {
+            if (product.getId().equals(productId)) {
+                product.setQuantity(product.getQuantity() + quantity);
+                productRepository.save(products);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Product not found: " + productId);
+    }
 }
 

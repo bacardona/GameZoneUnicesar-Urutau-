@@ -13,7 +13,9 @@ import java.util.List;
 /**
  * Handles file-based persistence for Sale objects using a plain-text CSV format.
  * Sales are stored by referencing the IDs of Customer, Seller, and Product,
- * which are resolved back into real objects when loading.
+ * which are resolved back into real objects when loading. The applied
+ * promotion name and the discount amount are stored too, so a reloaded sale
+ * keeps the same final total.
  **/
 
 
@@ -44,14 +46,15 @@ public class SaleRepository {
 
     /**
      * Loads sales from the CSV file, resolving stored IDs into the given
-     * customer, seller, and product objects.
-
+     * customer, seller, and product objects. Lines written before promotions
+     * existed (5 fields) are still loaded, with no discount.
+     *
      * @param customers previously loaded customers
      * @param sellers previously loaded sellers
-     * @param products previously loaded products
+     * @param products previously loaded products and accessories
      * @return the list of sales recovered from disk
      **/
-    
+
     //Encargado de cargar todas las ventas del CSV
     public List<Sale> load(List<Customer> customers, List<Seller> sellers, List<Product> products) {
         List<Sale> sales = new ArrayList<>();
@@ -74,15 +77,16 @@ public class SaleRepository {
         }
         return sales;
     }
-    
+
     /**
      * Converts a Sale into a single CSV line, storing only the IDs of its
-     * related customer, seller, and products instead of the full objects.
+     * related customer, seller, and products instead of the full objects,
+     * plus the applied promotion name (empty if none) and the discount amount.
      *
      * @param sale the sale to convert
      * @return the CSV representation of the sale
     **/
-    
+
     //Encargado de convertir una venta en una linea de CSV
     private String toLine(Sale sale) {
         List<Product> saleProducts = sale.getProducts();
@@ -94,17 +98,24 @@ public class SaleRepository {
             }
         }
 
+        String promotionName = sale.getAppliedPromotionName() == null
+                ? ""
+                : sale.getAppliedPromotionName().replace(FIELD_SEPARATOR, " ");
+
         return String.join(FIELD_SEPARATOR,
                 sale.getId(),
                 String.valueOf(sale.getDate().getTime()),
                 sale.getCustomer().getID(),
                 sale.getSeller().getID(),
-                productIds.toString());
+                productIds.toString(),
+                promotionName,
+                String.valueOf(sale.getDiscountAmount()));
     }
-    
+
     /**
      * Rebuilds a Sale object from a single CSV line, resolving the stored
-     * customer, seller, and product IDs into the actual in-memory objects.
+     * customer, seller, and product IDs into the actual in-memory objects
+     * and restoring the promotion and discount when present.
      *
      * @param line the CSV line to parse
      * @param customers the customers available to resolve the buyer reference
@@ -112,7 +123,7 @@ public class SaleRepository {
      * @param products the products available to resolve the purchased items
      * @return the reconstructed Sale, or null if the customer or seller could not be found
     **/
-    
+
     //Reconstruye un objeto Venta a partir de una sola línea CSV
     private Sale fromLine(String line, List<Customer> customers, List<Seller> sellers, List<Product> products) {
         String[] fields = line.split(FIELD_SEPARATOR, -1);
@@ -134,17 +145,26 @@ public class SaleRepository {
         }
 
         if (customer == null || seller == null) return null;
-        return new Sale(id, date, customer, seller, saleProducts);
+        Sale sale = new Sale(id, date, customer, seller, saleProducts);
+
+        // Fields 5 and 6 only exist in sales saved after promotions were added
+        if (fields.length >= 7) {
+            if (!fields[5].isEmpty()) {
+                sale.setAppliedPromotionName(fields[5]);
+            }
+            sale.setDiscountAmount(Double.parseDouble(fields[6]));
+        }
+        return sale;
     }
 
     /**
      * Searches for a customer by ID within the given list.
-     
+     *
      * @param customers the customers to search through
      * @param id the ID to look for
      * @return the matching customer, or null if not found
     **/
-    
+
     private Customer findCustomerById(List<Customer> customers, String id) {
         for (Customer c : customers) {
             if (c.getID().equals(id)) return c;
@@ -159,7 +179,7 @@ public class SaleRepository {
      * @param id the ID to look for
      * @return the matching seller, or null if not found
     **/
-    
+
     private Seller findSellerById(List<Seller> sellers, String id) {
         for (Seller s : sellers) {
             if (s.getID().equals(id)) return s;
@@ -174,7 +194,7 @@ public class SaleRepository {
      * @param id the ID to look for
      * @return the matching product, or null if not found
     **/
-    
+
     private Product findProductById(List<Product> products, String id) {
         for (Product p : products) {
             if (p.getId().equals(id)) return p;

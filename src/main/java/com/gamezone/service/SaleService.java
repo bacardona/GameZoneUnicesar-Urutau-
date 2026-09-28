@@ -3,6 +3,7 @@ package com.gamezone.service;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.SaleRepository;
@@ -26,6 +27,7 @@ public class SaleService {
     private final SaleRepository saleRepository;
     private final ProductService productService;
     private final AccessoryService accessoryService;
+    private final PromotionService promotionService;
     private final PersonService personService;
     private final List<Sale> sales;
 
@@ -35,16 +37,18 @@ public class SaleService {
      * @param saleRepository repository used to persist sales
      * @param productService service used to validate and update product stock
      * @param accessoryService service used to validate and update accessory stock
+     * @param promotionService service used to find the best promotion for a sale
      * @param personService service used to resolve customers and sellers
      * @param initialSales sales previously loaded at application startup
      **/
 
     public SaleService(SaleRepository saleRepository, ProductService productService,
-                        AccessoryService accessoryService, PersonService personService,
-                        List<Sale> initialSales) {
+                        AccessoryService accessoryService, PromotionService promotionService,
+                        PersonService personService, List<Sale> initialSales) {
         this.saleRepository = saleRepository;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
         this.personService = personService;
         this.sales = new ArrayList<>(initialSales);
     }
@@ -53,8 +57,9 @@ public class SaleService {
      * Registers a new sale containing products and/or accessories. Every item
      * is resolved and its stock validated BEFORE any inventory is modified,
      * so a failed validation never leaves the inventory partially updated.
-     * On success, the inventory is decreased automatically and the sale
-     * is persisted.
+     * The best active promotion (highest discount) is applied automatically
+     * over the subtotal. On success, the inventory is decreased automatically
+     * and the sale is persisted.
      *
      * @param customerId the id of the customer making the purchase
      * @param sellerId the id of the seller attending the sale
@@ -105,12 +110,22 @@ public class SaleService {
             items.add(resolvedItems.get(id));
         }
 
+        Sale sale = new Sale(UUID.randomUUID().toString(), new Date(), customer, seller, items);
+
+        // Apply the best active promotion: final total = subtotal - discount.
+        // Done before touching the inventory so a failure here leaves stock intact.
+        Promotion bestPromotion = promotionService.findBestPromotionFor(sale);
+        if (bestPromotion != null) {
+            double discount = Math.min(bestPromotion.calculateDiscount(sale), sale.calculateTotal());
+            sale.setAppliedPromotionName(bestPromotion.getName());
+            sale.setDiscountAmount(discount);
+        }
+
         // Update inventory delegating according to the real type of each item
         for (Map.Entry<String, Integer> entry : quantitiesById.entrySet()) {
             updateInventory(resolvedItems.get(entry.getKey()), entry.getValue());
         }
 
-        Sale sale = new Sale(UUID.randomUUID().toString(), new Date(), customer, seller, items);
         sales.add(sale);
         saleRepository.save(sales);
 

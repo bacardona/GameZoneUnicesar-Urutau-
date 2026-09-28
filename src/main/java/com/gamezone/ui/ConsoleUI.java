@@ -1,17 +1,24 @@
 package com.gamezone.ui;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.Cable;
+import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.Console;
 import com.gamezone.model.Controller;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Memory;
+import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Product;
+import com.gamezone.model.Promotion;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
+import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -30,6 +37,7 @@ public class ConsoleUI {
     private final PersonService personService;
     private final ProductService productService;
     private final AccessoryService accessoryService;
+    private final PromotionService promotionService;
     private final SaleService saleService;
 
     /**
@@ -38,15 +46,18 @@ public class ConsoleUI {
      * @param personService service used to manage customers and sellers
      * @param productService service used to manage products
      * @param accessoryService service used to manage accessories
+     * @param promotionService service used to manage promotions
      * @param saleService service used to manage sales
     **/
 
     public ConsoleUI(PersonService personService, ProductService productService,
-                     AccessoryService accessoryService, SaleService saleService) {
+                     AccessoryService accessoryService, PromotionService promotionService,
+                     SaleService saleService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
         this.saleService = saleService;
     }
 
@@ -74,6 +85,8 @@ public class ConsoleUI {
             System.out.println("10. View sales history by seller");
             System.out.println("--- Accessories ---");
             System.out.println("11. Accessory management");
+            System.out.println("--- Promotions ---");
+            System.out.println("12. Promotion management");
             System.out.println("0. Exit");
             System.out.print("Select an option: ");
 
@@ -84,6 +97,7 @@ public class ConsoleUI {
                 case "4", "5", "6" -> showPersonMenu(option);
                 case "7", "8", "9", "10" -> showSaleMenu(option);
                 case "11" -> showAccessoryMenu();
+                case "12" -> showPromotionMenu();
                 case "0" -> {
                     System.out.println("Closing GameZone Unicesar. See you soon!");
                     running = false;
@@ -358,7 +372,7 @@ public class ConsoleUI {
         int quantity = readValidQuantity();
         String connectionType = readValidated("Connection type (1. Wireless, 2. Wired): ",
                 o -> o.equals("1") || o.equals("2"), "Invalid option. Enter 1 or 2: ")
-                .equals("1") ? "Wireless" : "Wired";
+                .equals("1") ? "Inalámbrico" : "Alámbrico";
 
         Controller controller = new Controller(id, title, price, quantity, connectionType);
         applyCompatibility(controller);
@@ -558,6 +572,189 @@ public class ConsoleUI {
                 .forEach(a -> System.out.println(a.getDescription()));
     }
 
+//PROMOCIONES
+
+    /**
+     * Displays the promotion management submenu in a loop until the user
+     * chooses to go back to the main menu.
+    **/
+
+    private void showPromotionMenu() {
+        boolean back = false;
+
+        while (!back) {
+            System.out.println("\n--- Promotion Management ---");
+            System.out.println("1. Register a percentage discount");
+            System.out.println("2. Register a category discount");
+            System.out.println("3. Register a bulk purchase discount");
+            System.out.println("4. List all promotions");
+            System.out.println("5. List active promotions");
+            System.out.println("0. Back");
+            System.out.print("Select an option: ");
+
+            switch (scanner.nextLine()) {
+                case "1" -> registerPercentageDiscount();
+                case "2" -> registerCategoryDiscount();
+                case "3" -> registerBulkPurchaseDiscount();
+                case "4" -> listPromotions(promotionService.listAllPromotions(), "All Promotions");
+                case "5" -> listPromotions(promotionService.listActivePromotions(), "Active Promotions");
+                case "0" -> back = true;
+                default -> System.out.println("Invalid option, try again.");
+            }
+        }
+    }
+
+    /**
+     * Prompts for the data of a percentage discount and registers it.
+    **/
+
+    private void registerPercentageDiscount() {
+        System.out.println("\n--- Register Percentage Discount ---");
+        String id = readNewPromotionId();
+        String name = readValidated("Name: ", this::isAlphanumeric, "Invalid name. Letters and numbers only: ");
+        LocalDate startDate = readValidDate("Start date (yyyy-MM-dd): ");
+        LocalDate endDate = readValidDate("End date (yyyy-MM-dd): ");
+        double percentage = readValidPercentage();
+
+        try {
+            promotionService.registerPercentageDiscount(id, name, startDate, endDate, percentage);
+            System.out.println("Percentage discount registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register promotion: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Prompts for the data of a category discount and registers it.
+    **/
+
+    private void registerCategoryDiscount() {
+        System.out.println("\n--- Register Category Discount ---");
+        String id = readNewPromotionId();
+        String name = readValidated("Name: ", this::isAlphanumeric, "Invalid name. Letters and numbers only: ");
+        LocalDate startDate = readValidDate("Start date (yyyy-MM-dd): ");
+        LocalDate endDate = readValidDate("End date (yyyy-MM-dd): ");
+        double percentage = readValidPercentage();
+        String category = readValidated("Category (1. VIDEOGAME, 2. CONSOLE): ",
+                o -> o.equals("1") || o.equals("2"), "Invalid option. Enter 1 or 2: ")
+                .equals("1") ? "VIDEOGAME" : "CONSOLE";
+
+        try {
+            promotionService.registerCategoryDiscount(id, name, startDate, endDate, percentage, category);
+            System.out.println("Category discount registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register promotion: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Prompts for the data of a bulk purchase discount and registers it.
+    **/
+
+    private void registerBulkPurchaseDiscount() {
+        System.out.println("\n--- Register Bulk Purchase Discount ---");
+        String id = readNewPromotionId();
+        String name = readValidated("Name: ", this::isAlphanumeric, "Invalid name. Letters and numbers only: ");
+        LocalDate startDate = readValidDate("Start date (yyyy-MM-dd): ");
+        LocalDate endDate = readValidDate("End date (yyyy-MM-dd): ");
+        int minQuantity = readValidPositiveInt("Minimum quantity of products: ");
+        double percentage = readValidPercentage();
+
+        try {
+            promotionService.registerBulkPurchaseDiscount(id, name, startDate, endDate, minQuantity, percentage);
+            System.out.println("Bulk purchase discount registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register promotion: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Prints a list of promotions under the given title.
+     *
+     * @param promotions the promotions to print
+     * @param title the heading shown before the list
+    **/
+
+    private void listPromotions(java.util.List<Promotion> promotions, String title) {
+        System.out.println("\n--- " + title + " ---");
+        if (promotions.isEmpty()) {
+            System.out.println("No promotions found.");
+        }
+        promotions.forEach(p -> System.out.println(describePromotion(p)));
+    }
+
+    /**
+     * Builds a one-line description of a promotion, including the details
+     * specific to its concrete type.
+     *
+     * @param promotion the promotion to describe
+     * @return the description text
+    **/
+
+    private String describePromotion(Promotion promotion) {
+        String details = "";
+        if (promotion instanceof PercentageDiscount) {
+            PercentageDiscount pd = (PercentageDiscount) promotion;
+            details = "Percentage: " + pd.getPercentage() + "%";
+        } else if (promotion instanceof CategoryDiscount) {
+            CategoryDiscount cd = (CategoryDiscount) promotion;
+            details = "Category: " + cd.getTargetCategory() + ", " + cd.getPercentage() + "%";
+        } else if (promotion instanceof BulkPurchaseDiscount) {
+            BulkPurchaseDiscount bd = (BulkPurchaseDiscount) promotion;
+            details = "Min quantity: " + bd.getMinQuantity() + ", " + bd.getPercentage() + "%";
+        }
+        return promotion.getId() + " | " + promotion.getName() + " | " + details
+                + " | " + promotion.getStartDate() + " to " + promotion.getEndDate();
+    }
+
+    /**
+     * Reads a numeric promotion id that is not used by another promotion.
+    **/
+
+    private String readNewPromotionId() {
+        while (true) {
+            String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+            if (promotionService.findById(id) == null) {
+                return id;
+            }
+            System.out.println("That ID is already used by another promotion.");
+        }
+    }
+
+    /**
+     * Reads a date in yyyy-MM-dd format, repeating until it is valid.
+    **/
+
+    private LocalDate readValidDate(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                return LocalDate.parse(scanner.nextLine().trim());
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date. Use the format yyyy-MM-dd (example: 2026-12-31).");
+            }
+        }
+    }
+
+    /**
+     * Reads a discount percentage greater than 0 and at most 100.
+    **/
+
+    private double readValidPercentage() {
+        while (true) {
+            System.out.print("Discount percentage (0-100): ");
+            try {
+                double value = Double.parseDouble(scanner.nextLine());
+                if (value > 0 && value <= 100) {
+                    return value;
+                }
+                System.out.println("Percentage must be greater than 0 and at most 100.");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number. Please try again.");
+            }
+        }
+    }
+
 //VENTAS
 
     /**
@@ -602,7 +799,7 @@ public class ConsoleUI {
 
         try {
             var sale = saleService.registerSale(customerId, sellerId, itemIds);
-            System.out.println("Sale registered. Total: " + sale.calculateTotal());
+            System.out.println("\nSale registered.\n" + sale.generateReceipt());
         } catch (IllegalArgumentException e) {
             System.out.println("Could not register sale: " + e.getMessage());
         }
@@ -643,6 +840,6 @@ public class ConsoleUI {
      */
     private void printSale(com.gamezone.model.Sale sale) {
         System.out.println("Sale " + sale.getId() + " | Customer: " + sale.getCustomer().getName()
-                + " | Seller: " + sale.getSeller().getName() + " | Total: " + sale.calculateTotal());
+                + " | Seller: " + sale.getSeller().getName() + " | Total: " + sale.calculateFinalTotal());
     }
 }

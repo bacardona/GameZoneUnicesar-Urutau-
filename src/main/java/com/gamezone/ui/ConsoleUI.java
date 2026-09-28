@@ -1,11 +1,19 @@
 package com.gamezone.ui;
 
+import com.gamezone.model.Accessory;
+import com.gamezone.model.Cable;
+import com.gamezone.model.Console;
+import com.gamezone.model.Controller;
 import com.gamezone.model.Customer;
+import com.gamezone.model.Memory;
+import com.gamezone.model.Product;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
 
@@ -339,33 +347,183 @@ public class ConsoleUI {
     }
 
     /**
-     * Registers a controller. PENDING: needs the constructor of Controller.
+     * Prompts for controller data and registers it through AccessoryService.
     **/
 
     private void registerController() {
-        // TODO: read the Controller-specific fields, build a Controller and
-        // call accessoryService.registerController(controller).
-        System.out.println("Not implemented yet: register controller.");
+        System.out.println("\n--- Register Controller ---");
+        String id = readNewSellableId();
+        String title = readValidated("Title: ", this::isAlphanumeric, "Invalid title. Letters and numbers only: ");
+        double price = readValidPrice();
+        int quantity = readValidQuantity();
+        String connectionType = readValidated("Connection type (1. Wireless, 2. Wired): ",
+                o -> o.equals("1") || o.equals("2"), "Invalid option. Enter 1 or 2: ")
+                .equals("1") ? "Wireless" : "Wired";
+
+        Controller controller = new Controller(id, title, price, quantity, connectionType);
+        applyCompatibility(controller);
+        try {
+            accessoryService.registerController(controller);
+            System.out.println("Controller registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register controller: " + e.getMessage());
+        }
     }
 
     /**
-     * Registers a cable. PENDING: needs the constructor of Cable.
+     * Prompts for cable data and registers it through AccessoryService.
     **/
 
     private void registerCable() {
-        // TODO: read the Cable-specific fields, build a Cable and
-        // call accessoryService.registerCable(cable).
-        System.out.println("Not implemented yet: register cable.");
+        System.out.println("\n--- Register Cable ---");
+        String id = readNewSellableId();
+        String title = readValidated("Title: ", this::isAlphanumeric, "Invalid title. Letters and numbers only: ");
+        double price = readValidPrice();
+        int quantity = readValidQuantity();
+        float meters = readValidPositiveFloat("Length in meters: ");
+        String type = readValidated("Connector type (HDMI, USB, optical...): ", this::isAlphanumeric,
+                "Invalid connector type. Letters and numbers only: ");
+
+        Cable cable = new Cable(id, title, price, quantity, meters, type);
+        applyCompatibility(cable);
+        try {
+            accessoryService.registerCable(cable);
+            System.out.println("Cable registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register cable: " + e.getMessage());
+        }
     }
 
     /**
-     * Registers a memory. PENDING: needs the constructor of Memory.
+     * Prompts for memory data and registers it through AccessoryService.
     **/
 
     private void registerMemory() {
-        // TODO: read the Memory-specific fields, build a Memory and
-        // call accessoryService.registerMemory(memory).
-        System.out.println("Not implemented yet: register memory.");
+        System.out.println("\n--- Register Memory ---");
+        String id = readNewSellableId();
+        String title = readValidated("Title: ", this::isAlphanumeric, "Invalid title. Letters and numbers only: ");
+        double price = readValidPrice();
+        int quantity = readValidQuantity();
+        int capacityGb = readValidPositiveInt("Capacity in GB: ");
+        String memoryType = readValidated("Memory type (SD, microSD, internal card): ", this::isAlphanumeric,
+                "Invalid memory type. Letters and numbers only: ");
+
+        Memory memory = new Memory(id, title, price, quantity, capacityGb, memoryType);
+        applyCompatibility(memory);
+        try {
+            accessoryService.registerMemory(memory);
+            System.out.println("Memory registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register memory: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Reads a numeric id that is not used by any product or accessory, since
+     * sales resolve products first and a repeated id would hide the accessory.
+     *
+     * @return an id not used by any existing product or accessory
+    **/
+
+    private String readNewSellableId() {
+        while (true) {
+            String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+            boolean usedByProduct = false;
+            for (Product p : productService.listProducts()) {
+                if (p.getId().equals(id)) {
+                    usedByProduct = true;
+                    break;
+                }
+            }
+            if (usedByProduct || accessoryService.findById(id) != null) {
+                System.out.println("That ID is already used by another product or accessory.");
+            } else {
+                return id;
+            }
+        }
+    }
+
+    /**
+     * Asks for the ids of the consoles the accessory is compatible with
+     * (comma separated, optional) and stores them in the accessory. Every id
+     * must belong to a registered console.
+     *
+     * @param accessory the accessory receiving the compatibility information
+    **/
+
+    private void applyCompatibility(Accessory accessory) {
+        while (true) {
+            System.out.print("Compatible console IDs (comma separated, empty for none): ");
+            String input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                return;
+            }
+            String[] ids = input.split("\\s*,\\s*");
+            List<String> invalid = new ArrayList<>();
+            for (String id : ids) {
+                if (!isExistingConsole(id)) {
+                    invalid.add(id);
+                }
+            }
+            if (invalid.isEmpty()) {
+                for (String id : ids) {
+                    accessory.addCompatibleConsoleId(id);
+                }
+                return;
+            }
+            System.out.println("These IDs are not registered consoles: " + String.join(", ", invalid));
+        }
+    }
+
+    /**
+     * Checks whether the given id belongs to a registered console.
+    **/
+
+    private boolean isExistingConsole(String id) {
+        for (Product p : productService.listProducts()) {
+            if (p instanceof Console && p.getId().equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Reads a decimal number strictly greater than zero.
+    **/
+
+    private float readValidPositiveFloat(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                float value = Float.parseFloat(scanner.nextLine());
+                if (value > 0) {
+                    return value;
+                }
+                System.out.println("Value must be greater than 0.");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number. Please try again.");
+            }
+        }
+    }
+
+    /**
+     * Reads a whole number strictly greater than zero.
+    **/
+
+    private int readValidPositiveInt(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value > 0) {
+                    return value;
+                }
+                System.out.println("Value must be greater than 0.");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number. Please enter a whole number.");
+            }
+        }
     }
 
     /**

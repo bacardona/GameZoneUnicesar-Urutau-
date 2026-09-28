@@ -6,10 +6,12 @@ import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
+import com.gamezone.persistence.PromotionRepository;
 import com.gamezone.persistence.SaleRepository;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
+import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 import com.gamezone.ui.ConsoleUI;
 
@@ -40,6 +42,8 @@ public class Main {
         ProductService productService = new ProductService();
         AccessoryRepository accessoryRepository = new AccessoryRepository();
         AccessoryService accessoryService = new AccessoryService(accessoryRepository);
+        PromotionRepository promotionRepository = new PromotionRepository();
+        PromotionService promotionService = new PromotionService(promotionRepository);
         SaleRepository saleRepository = new SaleRepository();
 
 // --- Obtain pre-filtered lists through the services --- //
@@ -55,10 +59,10 @@ public class Main {
 
 // --- Sale service ---
         SaleService saleService = new SaleService(saleRepository, productService,
-                accessoryService, personService, sales);
+                accessoryService, promotionService, personService, sales);
 
         // --- UI layer ---
-        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, saleService);
+        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, promotionService, saleService);
         consoleUI.showMainMenu();
     }
 

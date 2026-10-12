@@ -21,71 +21,84 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entry point of the GameZone Unicesar application.
- * Wires together repositories, services, and the console UI,
- * and loads previously stored data before starting the menu.
-**/
-
-//Desde aqui empieza el main
+ * Entry point of the GameZone Unicesar application. Wires together
+ * repositories, services, and the console UI, and loads previously stored data
+ * before starting the menu.
+ */
 public class Main {
 
-     /**
-     * Starts the application: builds the dependency graph
-     * (repositories -> services -> UI), loads previously stored data,
-     * and launches the main menu.
+    /**
+     * Starts the application: builds the dependency graph (repositories ->
+     * services -> UI) using constructor injection only, loads previously stored
+     * data, and launches the main menu.
      *
      * @param args command-line arguments (not used)
-    **/
-
+     */
     public static void main(String[] args) {
-// --- Persistence + Service layers (Product and Person load themselves) --- //
+
         PersonRepository personRepository = new PersonRepository();
         PersonService personService = new PersonService(personRepository);
+
         ProductService productService = new ProductService();
+
         AccessoryRepository accessoryRepository = new AccessoryRepository();
         AccessoryService accessoryService = new AccessoryService(accessoryRepository);
+
         PromotionRepository promotionRepository = new PromotionRepository();
         PromotionService promotionService = new PromotionService(promotionRepository);
+
         SaleRepository saleRepository = new SaleRepository();
 
-// --- Obtain pre-filtered lists through the services --- //
+        // Load people and sellable items (products and accessories).
         List<Customer> customers = personService.listCustomers();
         List<Seller> sellers = personService.listSellers();
 
-        // Products and accessories are both sellable, so sales are reloaded against both
         List<Product> sellableItems = new ArrayList<>(productService.listProducts());
         sellableItems.addAll(accessoryService.listAllAccessories());
+
+        // Sales must be loaded before WarrantyService, which resolves
+        // stored sale identifiers through the sale repository.
         List<Sale> sales = saleRepository.load(customers, sellers, sellableItems);
 
         checkPreloadedSellers(sellers);
 
-// --- Sale service ---
-        SaleService saleService = new SaleService(saleRepository, productService,
-                accessoryService, promotionService, personService, sales);
+        // No circular dependency: WarrantyService depends only on repositories
+        // and ProductService, so SaleService can receive it by constructor.
+        WarrantyRepository warrantyRepository = new WarrantyRepository();
+        WarrantyService warrantyService = new WarrantyService(
+                warrantyRepository, saleRepository, productService);
 
-        // WarrantyRepository needs SaleService and SaleService needs WarrantyService.
-        // The cycle is broken temporarily with a setter (adjustment A2 removes it).
-        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
-        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
-        saleService.setWarrantyService(warrantyService);
+        SaleService saleService = new SaleService(
+                saleRepository,
+                productService,
+                accessoryService,
+                promotionService,
+                warrantyService,
+                personService,
+                sales);
 
-        // --- UI layer ---
-        ConsoleUI consoleUI = new ConsoleUI(personService, productService, accessoryService, promotionService, warrantyService, saleService);
+        ConsoleUI consoleUI = new ConsoleUI(
+                personService,
+                productService,
+                accessoryService,
+                promotionService,
+                warrantyService,
+                saleService);
+
         consoleUI.showMainMenu();
     }
 
-     /**
-     * Verifies that the system starts with at least three preloaded sellers,
-     * as required for the first execution of the application.
+    /**
+     * Verifies that the system starts with at least three preloaded sellers, as
+     * required for the first execution of the application.
      *
      * @param sellers the list of sellers loaded at startup
      */
-
-//Esto es para los datos precargados, ojo
     private static void checkPreloadedSellers(List<Seller> sellers) {
         if (sellers.size() < 3) {
             System.out.println("WARNING: fewer than 3 preloaded sellers found ("
-                    + sellers.size() + "). Please check data/people.txt file.");
+                    + sellers.size()
+                    + "). Please check data/people.txt file.");
         }
     }
 }

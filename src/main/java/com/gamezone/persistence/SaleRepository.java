@@ -14,20 +14,23 @@ import java.util.List;
  * Handles file-based persistence for Sale objects using a plain-text CSV format.
  * Sales are stored by referencing the IDs of Customer, Seller, and Product,
  * which are resolved back into real objects when loading. The applied
- * promotion name and the discount amount are stored too, so a reloaded sale
- * keeps the same final total.
+ * promotion name, the discount amount and the extended warranties cost are
+ * stored too, so a reloaded sale keeps the same final total.
+ * The repository also keeps the last known list of sales in memory so other
+ * layers can resolve a sale by its ID without reloading the file.
  **/
-
-
-//Aqui usa el formato CSV para hacer el listado
 public class SaleRepository {
 
     private static final String FILE_PATH = "data/sales.csv";
     private static final String FIELD_SEPARATOR = ";";
     private static final String PRODUCT_SEPARATOR = ",";
 
+    private List<Sale> knownSales = new ArrayList<>();
+
     /**
      * Saves the complete list of sales to a CSV file, overwriting previous content.
+     * On success, the in-memory list of known sales is refreshed.
+     *
      * @param sales the list of sales to persist
      */
     public void save(List<Sale> sales) {
@@ -39,6 +42,7 @@ public class SaleRepository {
                 writer.write(toLine(sale));
                 writer.newLine();
             }
+            knownSales = new ArrayList<>(sales);
         } catch (IOException e) {
             System.err.println("Error saving sales: " + e.getMessage());
         }
@@ -47,19 +51,19 @@ public class SaleRepository {
     /**
      * Loads sales from the CSV file, resolving stored IDs into the given
      * customer, seller, and product objects. Lines written before promotions
-     * existed (5 fields) are still loaded, with no discount.
+     * existed (5 fields) are still loaded, with no discount. The loaded list
+     * is also kept in memory for later lookups by ID.
      *
      * @param customers previously loaded customers
      * @param sellers previously loaded sellers
      * @param products previously loaded products and accessories
      * @return the list of sales recovered from disk
      **/
-
-    //Encargado de cargar todas las ventas del CSV
     public List<Sale> load(List<Customer> customers, List<Seller> sellers, List<Product> products) {
         List<Sale> sales = new ArrayList<>();
         File file = new File(FILE_PATH);
         if (!file.exists()) {
+            knownSales = new ArrayList<>();
             return sales;
         }
 
@@ -75,7 +79,24 @@ public class SaleRepository {
         } catch (IOException e) {
             System.err.println("Error loading sales: " + e.getMessage());
         }
+        knownSales = new ArrayList<>(sales);
         return sales;
+    }
+
+    /**
+     * Finds a sale by its identifier among the sales loaded or saved so far.
+     * Other layers use this method to resolve sale references from stored IDs.
+     *
+     * @param saleId the sale identifier to look for
+     * @return the matching sale, or null if not found
+     **/
+    public Sale findById(String saleId) {
+        for (Sale sale : knownSales) {
+            if (sale.getId().equals(saleId)) {
+                return sale;
+            }
+        }
+        return null;
     }
 
     /**
@@ -87,8 +108,6 @@ public class SaleRepository {
      * @param sale the sale to convert
      * @return the CSV representation of the sale
     **/
-
-    //Encargado de convertir una venta en una linea de CSV
     private String toLine(Sale sale) {
         List<Product> saleProducts = sale.getProducts();
         StringBuilder productIds = new StringBuilder();
@@ -125,8 +144,6 @@ public class SaleRepository {
      * @param products the products available to resolve the purchased items
      * @return the reconstructed Sale, or null if the customer or seller could not be found
     **/
-
-    //Reconstruye un objeto Venta a partir de una sola línea CSV
     private Sale fromLine(String line, List<Customer> customers, List<Seller> sellers, List<Product> products) {
         String[] fields = line.split(FIELD_SEPARATOR, -1);
         if (fields.length < 5) return null;
@@ -170,7 +187,6 @@ public class SaleRepository {
      * @param id the ID to look for
      * @return the matching customer, or null if not found
     **/
-
     private Customer findCustomerById(List<Customer> customers, String id) {
         for (Customer c : customers) {
             if (c.getID().equals(id)) return c;
@@ -185,7 +201,6 @@ public class SaleRepository {
      * @param id the ID to look for
      * @return the matching seller, or null if not found
     **/
-
     private Seller findSellerById(List<Seller> sellers, String id) {
         for (Seller s : sellers) {
             if (s.getID().equals(id)) return s;
@@ -200,7 +215,6 @@ public class SaleRepository {
      * @param id the ID to look for
      * @return the matching product, or null if not found
     **/
-
     private Product findProductById(List<Product> products, String id) {
         for (Product p : products) {
             if (p.getId().equals(id)) return p;

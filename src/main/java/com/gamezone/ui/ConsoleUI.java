@@ -643,10 +643,16 @@ public class ConsoleUI {
         LocalDate startDate = readValidDate("Start date (yyyy-MM-dd): ");
         LocalDate endDate = readValidDate("End date (yyyy-MM-dd): ");
         double percentage = readValidPercentage();
-        String category = readValidated("Category (1. VIDEOGAME, 2. CONSOLE): ",
-                o -> o.equals("1") || o.equals("2"), "Invalid option. Enter 1 or 2: ")
-                .equals("1") ? "VIDEOGAME" : "CONSOLE";
-
+        String categoryOption = readValidated(
+                "Category (1. VIDEOGAME, 2. CONSOLE, 3. ACCESSORY): ",
+                o -> o.equals("1") || o.equals("2") || o.equals("3"),
+                "Invalid option. Enter 1, 2 or 3: ");
+        String category = switch (categoryOption) {
+            case "1" -> "VIDEOGAME";
+            case "2" -> "CONSOLE";
+            default -> "ACCESSORY";
+        };
+        
         try {
             promotionService.registerCategoryDiscount(id, name, startDate, endDate, percentage, category);
             System.out.println("Category discount registered successfully.");

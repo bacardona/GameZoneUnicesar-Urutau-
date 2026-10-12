@@ -67,7 +67,8 @@ public class PromotionService {
      * @param startDate promotion start date
      * @param endDate promotion end date
      * @param percentage discount percentage
-     * @param targetCategory target product category
+     * @param targetCategory target product category ("VIDEOGAME", "CONSOLE"
+     * or "ACCESSORY")
      */
     public void registerCategoryDiscount(
             String id,
@@ -76,6 +77,15 @@ public class PromotionService {
             LocalDate endDate,
             double percentage,
             String targetCategory) {
+
+        if (targetCategory == null
+                || !(targetCategory.equalsIgnoreCase("VIDEOGAME")
+                || targetCategory.equalsIgnoreCase("CONSOLE")
+                || targetCategory.equalsIgnoreCase("ACCESSORY"))) {
+
+            throw new IllegalArgumentException(
+                    "Target category must be VIDEOGAME, CONSOLE or ACCESSORY.");
+        }
 
         CategoryDiscount promotion = new CategoryDiscount(
                 id,
@@ -87,13 +97,6 @@ public class PromotionService {
         );
 
         validateNewPromotion(promotion);
-
-        if (!targetCategory.equalsIgnoreCase("VIDEOGAME")
-                && !targetCategory.equalsIgnoreCase("CONSOLE")) {
-
-            throw new IllegalArgumentException(
-                    "Target category must be VIDEOGAME or CONSOLE.");
-        }
 
         promotions.add(promotion);
         promotionRepository.saveAll(promotions);

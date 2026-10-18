@@ -15,6 +15,8 @@ import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
+import com.gamezone.persistence.ReturnRepository;
+import com.gamezone.service.ReturnService;
 import com.gamezone.ui.ConsoleUI;
 
 import java.util.ArrayList;
@@ -77,6 +79,9 @@ public class Main {
                 personService,
                 sales);
 
+        ReturnRepository returnRepository = new ReturnRepository(saleService, productService);
+        ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
+        
         ConsoleUI consoleUI = new ConsoleUI(
                 personService,
                 productService,

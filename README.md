@@ -136,6 +136,8 @@ The team follows a lightweight Git Flow: `main` holds the stable release, `devel
 - [Hierarchy Diagram](docs/Hierarchy%20diagram.md)
 - [Class Diagram](docs/Class%20diagram.md)
 - [Layers Diagram](docs/Layer%20diagram.md)
+- [Accessory Analysis](docs/accessory-analysis.md)
+- [Accessory Class Diagram](docs/accessory-class-diagram.md)
 
 ## AI Usage Logs
 

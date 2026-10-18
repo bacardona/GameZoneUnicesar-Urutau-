@@ -94,6 +94,8 @@ public class ConsoleUI {
             System.out.println("12. Promotion management");
             System.out.println("--- Warranties ---");
             System.out.println("13. Warranty management");
+            System.out.println("--- Returns ---");
+            System.out.println("14. Return management");
             System.out.println("0. Exit");
             System.out.print("Select an option: ");
 
@@ -106,6 +108,7 @@ public class ConsoleUI {
                 case "11" -> showAccessoryMenu();
                 case "12" -> showPromotionMenu();
                 case "13" -> showWarrantyMenu();
+                case "14" -> showReturnMenu();
                 case "0" -> {
                     System.out.println("Closing GameZone Unicesar. See you soon!");
                     running = false;
@@ -971,4 +974,27 @@ public class ConsoleUI {
         System.out.println("Sale " + sale.getId() + " | Customer: " + sale.getCustomer().getName()
                 + " | Seller: " + sale.getSeller().getName() + " | Total: " + sale.calculateFinalTotal());
     }
+    
+    //DEVOLUCIONES
+
+    /**
+     * Displays the return management submenu in a loop until the user
+     * chooses to go back to the main menu.
+    **/
+
+    private void showReturnMenu() {
+        boolean back = false;
+
+        while (!back) {
+            System.out.println("\n--- Return Management ---");
+            System.out.println("0. Back");
+            System.out.print("Select an option: ");
+
+            switch (scanner.nextLine()) {
+                case "0" -> back = true;
+                default -> System.out.println("Invalid option, try again.");
+            }
+        }
+    }
+    
 }

@@ -228,6 +228,22 @@ public SaleService(
     }
 
     /**
+     * Finds a sale by its identifier.
+     *
+     * @param saleId the id of the sale to search for
+     * @return the matching sale, or null if no sale has that id
+     **/
+
+    public Sale findSaleById(String saleId) {
+        for (Sale sale : sales) {
+            if (sale.getId().equals(saleId)) {
+                return sale;
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Counts how many times each id appears in the requested list,
      * so that buying the same item multiple times is treated as one
      * stock check for the total quantity instead of several separate checks.
@@ -331,4 +347,11 @@ public SaleService(
         }
         return null;
     }
+
+    /**
+     * Finds a sale by its identifier.
+     *
+     * @param saleId the id of the sale to search for
+     * @return the matching sale, or null if no sale has that id
+     **/
 }

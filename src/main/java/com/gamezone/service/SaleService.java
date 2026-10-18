@@ -251,7 +251,7 @@ public SaleService(
      * @param itemIds the raw list of requested ids
      * @return a map from id to the quantity requested
     **/
-
+    
     //Cuenta cuantas veces aparece cada ID para validar el stock una sola vez por item
     private Map<String, Integer> countQuantities(List<String> itemIds) {
         Map<String, Integer> counts = new HashMap<>();
@@ -347,7 +347,7 @@ public SaleService(
         }
         return null;
     }
-
+    
     /**
      * Finds a sale by its identifier.
      *

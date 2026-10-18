@@ -12,12 +12,15 @@ import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
 import com.gamezone.model.Warranty;
+import com.gamezone.model.Return;
+import com.gamezone.model.Sale;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
+import com.gamezone.service.ReturnService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -25,7 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
-
+import java.util.LinkedHashMap;
+import java.util.Map;
 /**
  * Console-based user interface for the GameZone system.
  * Displays the main menu and delegates each operation to the
@@ -42,21 +46,23 @@ public class ConsoleUI {
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
     private final SaleService saleService;
+    private final ReturnService returnService;
 
     /**
      * Creates a new ConsoleUI.
-     *
+     * 
      * @param personService service used to manage customers and sellers
      * @param productService service used to manage products
      * @param accessoryService service used to manage accessories
      * @param promotionService service used to manage promotions
      * @param warrantyService service used to query warranties
      * @param saleService service used to manage sales
+     * @param returnService service used to manage return
     **/
 
     public ConsoleUI(PersonService personService, ProductService productService,
                      AccessoryService accessoryService, PromotionService promotionService,
-                     WarrantyService warrantyService, SaleService saleService) {
+                     WarrantyService warrantyService, SaleService saleService, ReturnService returnService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
         this.productService = productService;
@@ -64,6 +70,7 @@ public class ConsoleUI {
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
         this.saleService = saleService;
+        this.returnService = returnService;
     }
 
     /**

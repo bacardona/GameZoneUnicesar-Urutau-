@@ -88,7 +88,9 @@ public class Main {
                 accessoryService,
                 promotionService,
                 warrantyService,
-                saleService);
+                saleService,
+                returnService);
+                
 
         consoleUI.showMainMenu();
     }

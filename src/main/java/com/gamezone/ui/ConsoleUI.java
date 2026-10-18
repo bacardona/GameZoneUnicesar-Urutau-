@@ -247,7 +247,7 @@ public class ConsoleUI {
 
     private void registerVideoGame() {
         System.out.println("\n--- Register Video Game ---");
-        String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+        String id = readNewSellableId(); 
         String title = readValidated("Title: ", this::isAlphanumeric, "Invalid title. Letters and numbers only: ");
         double price = readValidPrice();
         int quantity = readValidQuantity();
@@ -266,7 +266,7 @@ public class ConsoleUI {
 
     private void registerConsole() {
         System.out.println("\n--- Register Console ---");
-        String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: ");
+        String id = readNewSellableId();
         String title = readValidated("Title: ", this::isAlphanumeric, "Invalid title. Letters and numbers only: ");
         double price = readValidPrice();
         int quantity = readValidQuantity();
@@ -452,8 +452,7 @@ public class ConsoleUI {
 
     private String readNewSellableId() {
         while (true) {
-            String id = readNewSellableId();
-            boolean usedByProduct = false;
+            String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: "); boolean usedByProduct = false;
             for (Product p : productService.listProducts()) {
                 if (p.getId().equals(id)) {
                     usedByProduct = true;

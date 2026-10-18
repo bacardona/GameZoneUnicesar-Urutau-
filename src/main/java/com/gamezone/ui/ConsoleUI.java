@@ -452,8 +452,7 @@ public class ConsoleUI {
 
     private String readNewSellableId() {
         while (true) {
-            String id = readNewSellableId();
-            boolean usedByProduct = false;
+            String id = readValidated("ID: ", this::isNumeric, "Invalid ID. Numbers only: "); boolean usedByProduct = false;
             for (Product p : productService.listProducts()) {
                 if (p.getId().equals(id)) {
                     usedByProduct = true;

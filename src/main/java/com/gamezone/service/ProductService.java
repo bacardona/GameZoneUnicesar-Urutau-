@@ -70,6 +70,21 @@ public class ProductService {
     public List<Product> listProducts() {
         return products;
     }
+    
+    /**
+     * Finds a product by its identifier.
+     *
+     * @param productId id of the product to search for
+     * @return the matching product, or null if not found
+     */
+    public Product findById(String productId) {
+        for (Product product : products) {
+            if (product.getId().equals(productId)) {
+                return product;
+            }
+        }
+        return null;
+    }
 
     /**
      * Reduces the stock of a product after a sale.

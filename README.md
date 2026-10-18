@@ -9,15 +9,15 @@ GameZone Unicesar is a simulated retail platform for video games and consoles, s
 It's implemented as a console-based Java program following a rigid four-tier design (model, persistence, service, ui). Persistence is handled through flat files rather than a database, so records survive between sessions without any external dependency.
 
 ## Team
- 
+
 The project was built by a group of three, with each member owning a full vertical slice (all four layers) of one module:
- 
+
 | Member | Responsibility |
 |---|---|
 | Technical Lead | Sales & System Integration |
 | Developer 1 | Product Catalog |
 | Developer 2 | People Management |
- 
+
 Full breakdown of responsibilities, class ownership, and individual contributions is available in [TEAM.md](TEAM.md).
 
 ## Architecture
@@ -46,7 +46,71 @@ All source code lives under the `com.gamezone` package, split into four layers w
 └───────────────┘   └─────────────┘
 ```
 
-For the complete rationale behind the layering, see [docs/Layer diagram.md](docs/Layer%20diagram.md). The full class-level design is in [docs/Class diagram.md](docs/Class%20diagram.md).
+For the complete rationale behind the layering, see [docs/layers-diagram.md](docs/layers-diagram.md). The inheritance tree is in [docs/hierarchy-diagram.md](docs/hierarchy-diagram.md) and the full class-level design is in [docs/class-diagram.md](docs/class-diagram.md).
+
+## Accessories Module (Requirement 1)
+
+### Model
+
+`Accessory` is an abstract class that extends `Product`, so accessories share the base product data (id, name, price, stock). It has three concrete types:
+
+- `Controller`
+- `Cable`
+- `Memory`
+
+Each accessory can be checked for compatibility with a given console.
+
+### Services and persistence
+
+- `AccessoryRepository` stores accessories in `data/accessories.csv`.
+- `AccessoryService` holds the business rules for registering, listing, and querying accessories, and for updating accessory stock.
+
+### Sales with accessories
+
+`SaleService.registerSale` accepts products and accessories in the same sale, with unified stock validation and a single total. When a sale is completed, the inventory update is delegated to `ProductService` or `AccessoryService` depending on the type of each item. Item IDs must be unique across video games, consoles, and accessories, so a sale line always resolves to exactly one item.
+
+### Accessory management menu
+
+1. Register a controller.
+2. Register a cable.
+3. Register a memory card.
+4. List all accessories.
+5. List accessories by type.
+6. Show accessories compatible with a given console.
+
+When recording a sale, the user can now pick accessories in addition to products.
+
+## Promotions Module (Requirement 2)
+
+### Model
+
+`Promotion` is an abstract class with an id, a name, and a validity period (start and end date). It has three concrete types:
+
+- `PercentageDiscount`: a percentage off the sale subtotal.
+- `CategoryDiscount`: a percentage off the items of a given category.
+- `BulkPurchaseDiscount`: a percentage applied when the sale reaches a minimum quantity of products.
+
+### Services and persistence
+
+- `PromotionRepository` stores promotions in `data/promotions.csv`.
+- `PromotionService` registers and lists promotions, and selects the best one for a sale through `findBestPromotionFor`.
+
+### Promotions in sales
+
+`SaleService.registerSale` asks `PromotionService` for the best active promotion (the one with the highest discount) and applies it over the subtotal. The discount can never exceed the subtotal. `Sale` stores the name of the applied promotion and the discount amount, and `generateReceipt` shows the subtotal, the discount with the promotion's name, and the final total.
+
+### Promotion management menu
+
+1. Register a percentage discount.
+2. Register a category discount.
+3. Register a bulk purchase discount.
+4. List all promotions.
+5. List active promotions.
+
+### Documentation
+
+- [Promotion analysis](docs/promotion-analysis.md)
+- [Promotion class diagram](docs/promotion-class-diagram.md)
 
 ## Prerequisites
 
@@ -73,7 +137,7 @@ mvn exec:java "-Dexec.mainClass=com.gamezone.Main"
 
 ## Seed Data
 
-The [`data/`](./data) directory ships pre-populated with at least three sellers, since staff are treated as already on payroll and are never created through the UI. Every record — products, people, and sales — is written to disk after each operation and read back in automatically the next time the app starts.
+The [`data/`](./data) directory ships pre-populated with at least three sellers, since staff are treated as already on payroll and are never created through the UI. It also includes `accessories.csv` with sample accessories and `promotions.csv` with three preloaded promotions. Every record — products, accessories, promotions, people, and sales — is written to disk after each operation and read back in automatically the next time the app starts.
 
 ## Menu Features
 
@@ -91,7 +155,7 @@ The [`data/`](./data) directory ships pre-populated with at least three sellers,
 
 **Sales**
 
-7. Record a new sale (customer, seller, and one or more products).
+7. Record a new sale (customer, seller, and one or more products or accessories).
 8. Review the entire sales log.
 9. Look up a given customer's purchase history.
 10. Look up the sales handled by a given seller.
@@ -117,8 +181,12 @@ GameZoneUnicesar/
 ├── data/
 └── docs/
     ├── analysis.md
+    ├── accessory-analysis.md
+    ├── promotion-analysis.md
     ├── hierarchy-diagram.md
     ├── class-diagram.md
+    ├── accessory-class-diagram.md
+    ├── promotion-class-diagram.md
     ├── layers-diagram.md
     └── ai-usage/
         ├── leader-ai-log.md
@@ -128,7 +196,14 @@ GameZoneUnicesar/
 
 ## Branching Strategy
 
-The team follows a lightweight Git Flow: `main` holds the stable release, `develop` is the integration branch, and each module lives on its own `feature/*` branch. Everything merges into `develop` via Pull Request, and cross-review is mandatory — nobody approves their own PR.
+The team follows a lightweight Git Flow: `main` holds the stable release, `develop` is the integration branch, and every piece of work lives on its own branch, named with a prefix that describes its purpose:
+
+- `feature/` for new modules (for example, `feature/accessory-module`).
+- `fix/` for bug fixes (for example, `fix/duplicate-sellable-id`).
+- `refactor/` for restructuring without changing behavior.
+- `docs/` for documentation-only changes.
+
+Everything merges into `develop` via Pull Request, and cross-review is mandatory — nobody approves their own PR. Commits are written in English, are atomic, and follow Conventional Commits. There are no direct commits to `main` or `develop`, and no force pushes. Branches are deleted from the remote once merged.
 
 ## Design Docs
 

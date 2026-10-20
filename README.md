@@ -87,7 +87,7 @@ When recording a sale, the user can now pick accessories in addition to products
 `Promotion` is an abstract class with an id, a name, and a validity period (start and end date). It has three concrete types:
 
 - `PercentageDiscount`: a percentage off the sale subtotal.
-- `CategoryDiscount`: a percentage off the items of a given category.
+- `CategoryDiscount`: a percentage off the items of a given category (video games, consoles, or accessories).
 - `BulkPurchaseDiscount`: a percentage applied when the sale reaches a minimum quantity of products.
 
 ### Services and persistence
@@ -102,7 +102,7 @@ When recording a sale, the user can now pick accessories in addition to products
 ### Promotion management menu
 
 1. Register a percentage discount.
-2. Register a category discount.
+2. Register a category discount (video games, consoles, or accessories).
 3. Register a bulk purchase discount.
 4. List all promotions.
 5. List active promotions.

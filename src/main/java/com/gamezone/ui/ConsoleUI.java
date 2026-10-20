@@ -12,12 +12,15 @@ import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
 import com.gamezone.model.Warranty;
+import com.gamezone.model.Return;
+import com.gamezone.model.Sale;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
+import com.gamezone.service.ReturnService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -25,7 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
-
+import java.util.LinkedHashMap;
+import java.util.Map;
 /**
  * Console-based user interface for the GameZone system.
  * Displays the main menu and delegates each operation to the
@@ -42,21 +46,23 @@ public class ConsoleUI {
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
     private final SaleService saleService;
+    private final ReturnService returnService;
 
     /**
      * Creates a new ConsoleUI.
-     *
+     * 
      * @param personService service used to manage customers and sellers
      * @param productService service used to manage products
      * @param accessoryService service used to manage accessories
      * @param promotionService service used to manage promotions
      * @param warrantyService service used to query warranties
      * @param saleService service used to manage sales
+     * @param returnService service used to manage return
     **/
 
     public ConsoleUI(PersonService personService, ProductService productService,
                      AccessoryService accessoryService, PromotionService promotionService,
-                     WarrantyService warrantyService, SaleService saleService) {
+                     WarrantyService warrantyService, SaleService saleService, ReturnService returnService) {
         this.scanner = new Scanner(System.in);
         this.personService = personService;
         this.productService = productService;
@@ -64,6 +70,7 @@ public class ConsoleUI {
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
         this.saleService = saleService;
+        this.returnService = returnService;
     }
 
     /**
@@ -986,14 +993,109 @@ public class ConsoleUI {
 
         while (!back) {
             System.out.println("\n--- Return Management ---");
+            System.out.println("1. Register a return");
             System.out.println("0. Back");
             System.out.print("Select an option: ");
 
             switch (scanner.nextLine()) {
+                case "1" -> registerReturn();
                 case "0" -> back = true;
                 default -> System.out.println("Invalid option, try again.");
             }
+        }   
+    }
+    /**
+     * Prompts for a sale, shows the items that can still be returned, asks which
+     * ones to return and why, and registers the return through ReturnService.
+     * Fails fast when the sale does not exist or is outside the return period.
+    **/
+
+    private void registerReturn() {
+        System.out.println("\n--- Register Return ---");
+        String saleId = readValidated("Sale ID: ", v -> !v.isBlank(), "Sale ID cannot be empty: ").trim();
+
+        Sale sale = saleService.findSaleById(saleId);
+        if (sale == null) {
+            System.out.println("Sale not found: " + saleId);
+            return;
+        }
+        if (!sale.canBeReturned()) {
+            System.out.println("This sale is outside the 30-day return period.");
+            return;
+        }
+
+        Map<String, Integer> available = findReturnableUnits(sale);
+        if (available.isEmpty()) {
+            System.out.println("There are no items left to return in this sale.");
+            return;
+        }
+
+        System.out.println("Items that can be returned:");
+        for (Map.Entry<String, Integer> entry : available.entrySet()) {
+            System.out.println("  " + entry.getKey() + " - " + findProductTitle(entry.getKey())
+                    + " (units available: " + entry.getValue() + ")");
+        }
+
+        List<String> productIds = new ArrayList<>();
+        Map<String, Integer> chosen = new LinkedHashMap<>();
+        boolean adding = true;
+        while (adding) {
+            System.out.print("Product ID to return (empty to finish): ");
+            String id = scanner.nextLine().trim();
+            if (id.isEmpty()) {
+                adding = false;
+            } else if (chosen.getOrDefault(id, 0) >= available.getOrDefault(id, 0)) {
+                System.out.println("That item is not in the list, or all its units are already selected.");
+            } else {
+                chosen.merge(id, 1, Integer::sum);
+                productIds.add(id);
+            }
+        }
+
+        if (productIds.isEmpty()) {
+            System.out.println("No items selected. Return cancelled.");
+            return;
+        }
+
+        String reason = readValidated("Reason for the return: ", v -> !v.isBlank(),
+                "The reason cannot be empty: ").trim();
+
+        try {
+            Return returnItem = returnService.registerReturn(saleId, productIds, reason);
+            System.out.println("\nReturn registered.\n" + returnItem.generateReturnReceipt());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not register return: " + e.getMessage());
         }
     }
-    
+
+    /**
+     * Calculates how many units of each item in a sale can still be returned:
+     * units purchased minus units already returned. Accessories are excluded
+     * until ReturnService can restore their stock.
+     *
+     * @param sale the sale being returned
+     * @return a map from item id to the units still returnable (only ids above zero)
+    **/
+
+    private Map<String, Integer> findReturnableUnits(Sale sale) {
+        Map<String, Integer> available = new LinkedHashMap<>();
+        boolean hasAccessories = false;
+        for (Product p : sale.getProducts()) {
+            if (p instanceof Accessory) {
+                hasAccessories = true;
+            } else {
+                available.merge(p.getId(), 1, Integer::sum);
+            }
+        }
+        for (Return previous : returnService.viewReturnsBySale(sale.getId())) {
+            for (Product p : previous.getReturnedProducts()) {
+                available.computeIfPresent(p.getId(), (id, units) -> units - 1);
+            }
+        }
+        available.values().removeIf(units -> units <= 0);
+        if (hasAccessories) {
+            System.out.println("Note: accessories cannot be returned yet and are not listed.");
+        }
+        return available;
+    }
 }

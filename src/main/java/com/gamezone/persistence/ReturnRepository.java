@@ -75,7 +75,8 @@ public class ReturnRepository {
                         + returnItem.getOriginalSale().getId() + ";"
                         + returnedProductIds + ";"
                         + reason + ";"
-                        + returnItem.getRefundAmount();
+                        + returnItem.getRefundAmount() + ";"
+                        + returnItem.getWarrantyRefundAmount();
 
                 writer.write(line);
                 writer.newLine();
@@ -124,7 +125,11 @@ public class ReturnRepository {
                 String saleId = parts[2];
                 String productIds = parts[3];
                 String reason = parts[4];
-                double refundAmount = Double.parseDouble(parts[5]);
+
+                // Older records have no seventh column: no warranty refund.
+                double warrantyRefund = parts.length > 6
+                        ? Double.parseDouble(parts[6])
+                        : 0.0;
 
                 Sale originalSale = findSaleById(saleId);
 
@@ -144,18 +149,12 @@ public class ReturnRepository {
                 );
 
                 /*
-                 * The refund amount was already calculated when the return
-                 * was registered, so we restore the persisted value.
+                 * The refund amount is derived from the returned products,
+                 * the original sale and the cancelled warranties, so it is
+                 * recalculated instead of read from the file.
                  */
+                returnItem.setWarrantyRefundAmount(warrantyRefund);
                 returnItem.calculateRefundAmount();
-
-                if (returnItem.getRefundAmount() != refundAmount) {
-                    /*
-                     * The amount is derived from the returned products.
-                     * The calculated value is intentionally kept as the
-                     * source of truth.
-                     */
-                }
 
                 returns.add(returnItem);
             }

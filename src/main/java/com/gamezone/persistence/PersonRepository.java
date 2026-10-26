@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Person;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Seller;
@@ -43,6 +44,7 @@ public class PersonRepository {
      * data file.
      *
      * @param person person to be saved
+     * @throws PersistenceException if the data file cannot be written
      */
     public void save(Person person) {
         people.add(person);
@@ -71,13 +73,16 @@ public class PersonRepository {
             writer.newLine();
 
         } catch (IOException e) {
-            System.out.println("Error saving person: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al escribir el archivo " + filePath + " (operación: guardar persona).", e);
         }
     }
 
     /**
      * Loads people previously stored in the data file. Each record is converted
      * into the corresponding Customer or Seller object.
+     *
+     * @throws PersistenceException if the data file exists but cannot be read
      */
     public void load() {
         people.clear();
@@ -125,7 +130,8 @@ public class PersonRepository {
             }
 
         } catch (IOException e) {
-            System.out.println("Error loading people: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al leer el archivo " + filePath + " (operación: cargar personas).", e);
         }
     }
 

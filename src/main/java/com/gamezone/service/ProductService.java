@@ -1,10 +1,12 @@
 
 package com.gamezone.service;
 
+import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.model.Console;
 import com.gamezone.model.Product;
 import com.gamezone.model.VideoGame;
 import com.gamezone.persistence.ProductRepository;
+import com.gamezone.validation.ProductValidator;
 
 import java.util.List;
 
@@ -34,9 +36,12 @@ public class ProductService {
      * @param platform  platform the game runs on
      * @param genre     genre of the game
      * @param ageRating recommended age rating
+     * @throws com.gamezone.exceptions.InvalidDataException if the id, title,
+     *         price or quantity are not valid
      */
     public void registerVideoGame(String id, String title, double price, int quantity,
                                    String platform, String genre, String ageRating) {
+        ProductValidator.validateProductData(id, title, price, quantity);
         // Creamos el videojuego y lo agregamos a la lista en memoria
         VideoGame newVideoGame = new VideoGame(id, title, price, quantity, platform, genre, ageRating);
         products.add(newVideoGame);
@@ -54,9 +59,12 @@ public class ProductService {
      * @param brand      manufacturer brand
      * @param model      specific model
      * @param generation hardware generation
+     * @throws com.gamezone.exceptions.InvalidDataException if the id, title,
+     *         price or quantity are not valid
      */
     public void registerConsole(String id, String title, double price, int quantity,
                                  String brand, String model, String generation) {
+        ProductValidator.validateProductData(id, title, price, quantity);
         Console newConsole = new Console(id, title, price, quantity, brand, model, generation);
         products.add(newConsole);
         productRepository.save(products);
@@ -91,44 +99,38 @@ public class ProductService {
      *
      * @param productId    id of the product being sold
      * @param quantitySold quantity being sold
+     * @throws com.gamezone.exceptions.ResourceNotFoundException if the product
+     *         does not exist
+     * @throws com.gamezone.exceptions.BusinessRuleException if there is not
+     *         enough stock
      */
     public void updateStock(String productId, int quantitySold) {
-        // Buscamos el producto por su id
-        for (int i = 0; i < products.size(); i++) {
-            Product product = products.get(i);
+        Product product = findById(productId);
+        ProductValidator.validateProductExists(product, productId);
+        ProductValidator.validateStockAvailability(product, quantitySold);
 
-            if (product.getId().equals(productId)) {
-                // Validamos que haya suficiente stock antes de descontar
-                if (product.getQuantity() < quantitySold) {
-                    System.out.println("Not enough stock for: " + product.getTitle());
-                    return;
-                }
-                product.setQuantity(product.getQuantity() - quantitySold);
-                productRepository.save(products);
-                return;
-            }
-        }
-        System.out.println("Product not found: " + productId);
+        product.setQuantity(product.getQuantity() - quantitySold);
+        productRepository.save(products);
     }
     /**
      * Increases the stock of a product, used when a return is registered.
      *
      * @param productId id of the product being restored
      * @param quantity  quantity to add back to the stock
-     * @throws IllegalArgumentException if the quantity is not positive or the product does not exist
+     * @throws com.gamezone.exceptions.InvalidDataException if the quantity is
+     *         not positive
+     * @throws com.gamezone.exceptions.ResourceNotFoundException if the product
+     *         does not exist
      */
     public void restoreStock(String productId, int quantity) {
         if (quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than zero.");
+            throw new InvalidDataException("cantidad", "debe ser mayor que cero");
         }
-        for (Product product : products) {
-            if (product.getId().equals(productId)) {
-                product.setQuantity(product.getQuantity() + quantity);
-                productRepository.save(products);
-                return;
-            }
-        }
-        throw new IllegalArgumentException("Product not found: " + productId);
+        Product product = findById(productId);
+        ProductValidator.validateProductExists(product, productId);
+
+        product.setQuantity(product.getQuantity() + quantity);
+        productRepository.save(products);
     }
 }
 

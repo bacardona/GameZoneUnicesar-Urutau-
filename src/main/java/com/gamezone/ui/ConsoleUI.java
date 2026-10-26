@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.function.Predicate;
 import java.util.LinkedHashMap;
@@ -994,16 +995,41 @@ public class ConsoleUI {
         while (!back) {
             System.out.println("\n--- Return Management ---");
             System.out.println("1. Register a return");
+            System.out.println("2. Monthly balance");
             System.out.println("0. Back");
             System.out.print("Select an option: ");
 
             switch (scanner.nextLine()) {
                 case "1" -> registerReturn();
+                case "2" -> showMonthlyBalance();
                 case "0" -> back = true;
                 default -> System.out.println("Invalid option, try again.");
             }
         }   
     }
+    /**
+     * Asks for a month and a year and shows the total sales, the total
+     * refunded and the net balance of that period.
+    **/
+
+    private void showMonthlyBalance() {
+        System.out.println("\n--- Monthly Balance ---");
+        int month = readValidPositiveInt("Month (1-12): ");
+        int year = readValidPositiveInt("Year: ");
+
+        try {
+            double sales = returnService.calculateMonthlySales(month, year);
+            double refunds = returnService.calculateMonthlyReturns(month, year);
+            double balance = returnService.generateMonthlyBalance(month, year);
+
+            System.out.println(String.format(Locale.US, "Total sales:   $%.2f", sales));
+            System.out.println(String.format(Locale.US, "Total returns: $%.2f", refunds));
+            System.out.println(String.format(Locale.US, "Net balance:   $%.2f", balance));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Could not generate the balance: " + e.getMessage());
+        }
+    }
+
     /**
      * Prompts for a sale, shows the items that can still be returned, asks which
      * ones to return and why, and registers the return through ReturnService.

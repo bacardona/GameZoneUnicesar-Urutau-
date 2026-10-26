@@ -10,7 +10,6 @@ import com.gamezone.persistence.ReturnRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -178,37 +177,40 @@ public class ReturnService {
     }
 
     /**
-     * Calculates the monthly net balance by subtracting returns from sales for
-     * the specified month and year.
+     * Calculates the total sold in the given month and year. Each sale counts
+     * with its final total: subtotal minus the applied discount plus the cost
+     * of the extended warranties.
      *
      * @param month month number from 1 to 12
      * @param year calendar year
-     * @return net balance for the specified month
+     * @return total sales of the month
      */
-    public double generateMonthlyBalance(int month, int year) {
+    public double calculateMonthlySales(int month, int year) {
 
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException(
-                    "El mes debe estar entre 1 y 12.");
-        }
-
-        if (year <= 0) {
-            throw new IllegalArgumentException(
-                    "El año debe ser válido.");
-        }
+        validateMonthAndYear(month, year);
 
         double totalSales = 0.0;
 
         for (Sale sale : saleService.getAllSales()) {
 
-            if (isDateInMonth(
-                    sale.getDate(),
-                    month,
-                    year)) {
-
-                totalSales += sale.calculateTotal();
+            if (isDateInMonth(sale.getDate(), month, year)) {
+                totalSales += sale.calculateFinalTotal();
             }
         }
+
+        return totalSales;
+    }
+
+    /**
+     * Calculates the total refunded in the given month and year.
+     *
+     * @param month month number from 1 to 12
+     * @param year calendar year
+     * @return total refunded by the returns of the month
+     */
+    public double calculateMonthlyReturns(int month, int year) {
+
+        validateMonthAndYear(month, year);
 
         double totalReturns = 0.0;
 
@@ -223,7 +225,40 @@ public class ReturnService {
             }
         }
 
-        return totalSales - totalReturns;
+        return totalReturns;
+    }
+
+    /**
+     * Calculates the monthly net balance: total sales of the month minus the
+     * total refunded in the same month.
+     *
+     * @param month month number from 1 to 12
+     * @param year calendar year
+     * @return net balance for the specified month
+     */
+    public double generateMonthlyBalance(int month, int year) {
+
+        return calculateMonthlySales(month, year)
+                - calculateMonthlyReturns(month, year);
+    }
+
+    /**
+     * Validates the month and year used by the monthly report.
+     *
+     * @param month month number from 1 to 12
+     * @param year calendar year
+     */
+    private void validateMonthAndYear(int month, int year) {
+
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException(
+                    "El mes debe estar entre 1 y 12.");
+        }
+
+        if (year <= 0) {
+            throw new IllegalArgumentException(
+                    "El año debe ser válido.");
+        }
     }
 
     /**

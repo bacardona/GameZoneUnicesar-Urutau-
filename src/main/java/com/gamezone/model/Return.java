@@ -3,6 +3,7 @@ package com.gamezone.model;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Represents a return (full or partial) of one or more products originally
@@ -64,6 +65,43 @@ public class Return {
         return refundAmount;
     }
 
+    /**
+     * Returns the fraction of the original sale's subtotal that was discounted
+     * by the applied promotion (discount / subtotal). The warranties cost is not
+     * part of the subtotal, so it never affects this ratio.
+     *
+     * @return the discount ratio between 0 and 1, or 0 if the subtotal is zero
+     */
+    private double calculateDiscountRatio() {
+        double subtotal = originalSale.calculateTotal();
+        if (subtotal <= 0) {
+            return 0.0;
+        }
+        return originalSale.getDiscountAmount() / subtotal;
+    }
+
+    /**
+     * Calculates the proportional discount that corresponds to a returned product.
+     *
+     * @param product the returned product
+     * @return the part of the original discount attributed to the product
+     */
+    public double calculateItemDiscount(Product product) {
+        return product.getPrice() * calculateDiscountRatio();
+    }
+
+    /**
+     * Calculates the refund of a single returned product, applying the same
+     * proportional discount the customer received in the original sale:
+     * price * (1 - discount / subtotal).
+     *
+     * @param product the returned product
+     * @return the amount to refund for the product
+     */
+    public double calculateItemRefund(Product product) {
+        return product.getPrice() * (1 - calculateDiscountRatio());
+    }
+    
     /**
      * Calculates the refund amount by summing the price of every returned
      * product, stores the result in the refundAmount attribute, and

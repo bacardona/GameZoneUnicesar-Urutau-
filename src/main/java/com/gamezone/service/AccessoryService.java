@@ -184,6 +184,36 @@ public class AccessoryService {
     }
 
     /**
+     * Increases the stock of an accessory, used when a return is registered.
+     * It is the accessory counterpart of ProductService.restoreStock.
+     *
+     * @param accessoryId identifier of the accessory being returned
+     * @param quantity quantity to add back to the stock
+     * @throws IllegalArgumentException if the quantity is not positive or the
+     * accessory does not exist
+     */
+    public void restoreStock(String accessoryId, int quantity) {
+
+        if (quantity <= 0) {
+            throw new IllegalArgumentException(
+                    "Quantity must be greater than zero.");
+        }
+
+        Accessory accessory = findById(accessoryId);
+
+        if (accessory == null) {
+            throw new IllegalArgumentException(
+                    "Accessory not found: " + accessoryId);
+        }
+
+        accessory.setQuantity(
+                accessory.getQuantity() + quantity
+        );
+
+        accessoryRepository.saveAll(accessories);
+    }
+
+    /**
      * Validates the basic information of a new accessory.
      *
      * @param accessory accessory to validate

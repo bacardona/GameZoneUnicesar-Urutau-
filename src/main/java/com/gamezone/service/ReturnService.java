@@ -1,5 +1,6 @@
 package com.gamezone.service;
 
+import com.gamezone.model.Accessory;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
@@ -22,6 +23,7 @@ public class ReturnService {
     private final ReturnRepository returnRepository;
     private final SaleService saleService;
     private final ProductService productService;
+    private final AccessoryService accessoryService;
     private final List<Return> returns;
 
     /**
@@ -29,16 +31,19 @@ public class ReturnService {
      *
      * @param returnRepository repository used to persist returns
      * @param saleService service used to find existing sales
-     * @param productService service used to find products and restore stock
+     * @param productService service used to restore the stock of products
+     * @param accessoryService service used to restore the stock of accessories
      */
     public ReturnService(
             ReturnRepository returnRepository,
             SaleService saleService,
-            ProductService productService) {
+            ProductService productService,
+            AccessoryService accessoryService) {
 
         this.returnRepository = returnRepository;
         this.saleService = saleService;
         this.productService = productService;
+        this.accessoryService = accessoryService;
         this.returns = new ArrayList<>(returnRepository.loadAll());
     }
 
@@ -107,11 +112,7 @@ public class ReturnService {
 
         returnItem.calculateRefundAmount();
 
-        /*
-         * The leader is responsible for implementing restoreStock()
-         * in ProductService. ReturnService only invokes it here.
-         */
-        restoreReturnedProducts(productIds);
+        restoreReturnedStock(returnedProducts);
 
         returns.add(returnItem);
         returnRepository.saveAll(returns);
@@ -265,14 +266,21 @@ public class ReturnService {
     }
 
     /**
-     * Restores the stock of every returned product.
+     * Restores the stock of every returned item, delegating to the service
+     * that owns its real type. The Accessory check goes first because every
+     * Accessory is also a Product.
      *
-     * @param productIds identifiers of returned products
+     * @param returnedItems products and accessories being returned
      */
-    private void restoreReturnedProducts(List<String> productIds) {
+    private void restoreReturnedStock(List<Product> returnedItems) {
 
-        for (String productId : productIds) {
-            productService.restoreStock(productId, 1);
+        for (Product item : returnedItems) {
+
+            if (item instanceof Accessory) {
+                accessoryService.restoreStock(item.getId(), 1);
+            } else {
+                productService.restoreStock(item.getId(), 1);
+            }
         }
     }
 

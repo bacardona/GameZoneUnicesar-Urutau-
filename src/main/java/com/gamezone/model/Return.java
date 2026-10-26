@@ -133,10 +133,14 @@ public class Return {
         receipt.append("Fecha: ").append(date).append("\n");
         receipt.append("Venta original: ").append(originalSale.getId()).append("\n");
         receipt.append("Productos devueltos:\n");
-        for (Product product : returnedProducts) {
-            receipt.append("  - ").append(product.getTitle())
-                    .append(" - $").append(product.getPrice()).append("\n");
-        }
+    for (Product product : returnedProducts) {
+        receipt.append(String.format(Locale.US,
+                "  - %s%n      Precio de lista: $%.2f%n      Descuento proporcional: -$%.2f%n      Reembolsado: $%.2f%n",
+                product.getTitle(),
+                product.getPrice(),
+                calculateItemDiscount(product),
+                calculateItemRefund(product)));
+    }
         receipt.append("Motivo: ").append(reason).append("\n");
         receipt.append("Monto reembolsado: $").append(refundAmount).append("\n");
         receipt.append("---------------------------------");

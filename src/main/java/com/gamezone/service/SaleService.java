@@ -1,5 +1,7 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
@@ -9,6 +11,8 @@ import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.SaleRepository;
+import com.gamezone.validation.ProductValidator;
+import com.gamezone.validation.SaleValidator;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -84,11 +88,11 @@ public SaleService(
      * @param productIdsWithExtendedWarranty ids of the consoles that get an extended
      *                warranty; a console id repeated N times requests N extended warranties
      * @return the newly registered Sale
-     * @throws IllegalArgumentException if the sale has no items, the
-     *                                   customer/seller does not exist, an
-     *                                   item does not exist, or stock is
-     *                                   insufficient for any item, or an extended
-     *                                   warranty is requested for a non-console item
+     * @throws BusinessRuleException if the sale has no items, stock is
+     *                               insufficient for any item, or an extended
+     *                               warranty is requested for a non-console item
+     * @throws ResourceNotFoundException if the customer, the seller or an item
+     *                                   does not exist
      **/
 
     //Registra una nueva venta (productos y/o accesorios) despues de validar las reglas
@@ -96,17 +100,17 @@ public SaleService(
                              List<String> productIdsWithExtendedWarranty) {
 
         if (itemIds == null || itemIds.isEmpty()) {
-            throw new IllegalArgumentException("A sale must contain at least one product.");
+            throw new BusinessRuleException("La venta debe contener al menos un producto.");
         }
 
         Customer customer = findCustomerById(customerId);
         if (customer == null) {
-            throw new IllegalArgumentException("Customer not found: " + customerId);
+            throw new ResourceNotFoundException("cliente", customerId);
         }
 
         Seller seller = findSellerById(sellerId);
         if (seller == null) {
-            throw new IllegalArgumentException("Seller not found: " + sellerId);
+            throw new ResourceNotFoundException("vendedor", sellerId);
         }
 
         Map<String, Integer> quantitiesById = countQuantities(itemIds);
@@ -118,8 +122,8 @@ public SaleService(
             Product requested = findProductById(entry.getKey());
             if (!(requested instanceof Console)
                     || quantitiesById.getOrDefault(entry.getKey(), 0) < entry.getValue()) {
-                throw new IllegalArgumentException(
-                        "Extended warranty is only available for consoles included in the sale: "
+                throw new BusinessRuleException(
+                        "La garantía extendida solo aplica a consolas incluidas en la venta: "
                                 + entry.getKey());
             }
         }
@@ -129,13 +133,9 @@ public SaleService(
         for (Map.Entry<String, Integer> entry : quantitiesById.entrySet()) {
             Product item = findSellableById(entry.getKey());
             if (item == null) {
-                throw new IllegalArgumentException(
-                        "Product or accessory not found: " + entry.getKey());
+                throw new ResourceNotFoundException("producto o accesorio", entry.getKey());
             }
-            if (item.getQuantity() < entry.getValue()) {
-                throw new IllegalArgumentException(
-                        "Insufficient stock for: " + item.getTitle());
-            }
+            ProductValidator.validateStockAvailability(item, entry.getValue());
             resolvedItems.put(entry.getKey(), item);
         }
 
@@ -143,6 +143,7 @@ public SaleService(
         for (String id : itemIds) {
             items.add(resolvedItems.get(id));
         }
+        SaleValidator.validateSaleData(customer, seller, items);
 
         Sale sale = new Sale(UUID.randomUUID().toString(), new Date(), customer, seller, items);
 

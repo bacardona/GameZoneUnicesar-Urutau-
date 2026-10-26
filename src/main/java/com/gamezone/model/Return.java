@@ -103,16 +103,16 @@ public class Return {
     }
     
     /**
-     * Calculates the refund amount by summing the price of every returned
-     * product, stores the result in the refundAmount attribute, and
-     * returns it.
+     * Calculates the refund amount by summing the proportional refund of every
+     * returned product (list price minus its share of the original sale's
+     * discount), stores the result in the refundAmount attribute, and returns it.
      *
      * @return the calculated refund amount
      */
     public double calculateRefundAmount() {
         double total = 0.0;
         for (Product product : returnedProducts) {
-            total += product.getPrice();
+            total += calculateItemRefund(product);
         }
         this.refundAmount = total;
         return total;

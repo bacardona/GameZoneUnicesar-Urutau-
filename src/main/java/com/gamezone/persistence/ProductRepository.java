@@ -1,6 +1,7 @@
 
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Console;
 import com.gamezone.model.Product;
 import com.gamezone.model.VideoGame;
@@ -26,10 +27,10 @@ public class ProductRepository {
      * Saves the given list of products to the data file.
      *
      * @param products list of products to persist
+     * @throws PersistenceException if the file cannot be written
      */
     public void save(List<Product> products) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(filePath));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
 
             // Recorremos la lista y escribimos una línea por cada producto
             for (int i = 0; i < products.size(); i++) {
@@ -51,10 +52,9 @@ public class ProductRepository {
                 writer.write(line);
                 writer.newLine();
             }
-
-            writer.close();
         } catch (IOException e) {
-            System.out.println("Error saving products: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al escribir el archivo " + filePath + " (operación: guardar productos).", e);
         }
     }
     
@@ -62,6 +62,7 @@ public class ProductRepository {
      * Loads all products previously saved in the data file.
      *
      * @return list of products, or an empty list if the file does not exist
+     * @throws PersistenceException if the file exists but cannot be read
      */
     public List<Product> load() {
         List<Product> productList = new ArrayList<>();
@@ -72,8 +73,7 @@ public class ProductRepository {
             return productList;
         }
 
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String linea = reader.readLine();
 
             while (linea != null) {
@@ -95,10 +95,9 @@ public class ProductRepository {
                 }
                 linea = reader.readLine();
             }
-
-            reader.close();
         } catch (IOException e) {
-            System.out.println("Error loading products: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al leer el archivo " + filePath + " (operación: cargar productos).", e);
         }
 
         return productList;

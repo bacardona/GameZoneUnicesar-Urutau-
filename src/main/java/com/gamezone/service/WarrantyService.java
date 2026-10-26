@@ -178,6 +178,52 @@ public class WarrantyService {
     }
 
     /**
+     * Cancels the warranties of one returned unit of a product in a sale: at
+     * most one basic and one extended warranty are removed, so returning one of
+     * two identical consoles keeps the warranties of the other one. Returns the
+     * refundable cost: zero for a basic warranty and the additional cost for an
+     * extended one.
+     *
+     * @param productId identifier of the returned product
+     * @param saleId identifier of the sale the product belongs to
+     * @return the amount to refund for the cancelled warranties
+     */
+    public double cancelWarranties(String productId, String saleId) {
+        Warranty basic = null;
+        Warranty extended = null;
+
+        for (Warranty warranty : warranties) {
+            boolean matches = warranty.getProduct().getId().equals(productId)
+                    && warranty.getSale().getId().equals(saleId);
+
+            if (matches && basic == null && warranty instanceof BasicWarranty) {
+                basic = warranty;
+            } else if (matches && extended == null
+                    && warranty instanceof ExtendedWarranty) {
+                extended = warranty;
+            }
+        }
+
+        double refundableCost = 0.0;
+
+        if (basic != null) {
+            refundableCost += basic.getAdditionalCost();
+            warranties.remove(basic);
+        }
+
+        if (extended != null) {
+            refundableCost += extended.getAdditionalCost();
+            warranties.remove(extended);
+        }
+
+        if (basic != null || extended != null) {
+            warrantyRepository.saveAll(warranties);
+        }
+
+        return refundableCost;
+    }
+
+    /**
      * Loads the stored warranty records and resolves their sale and product
      * identifiers into real objects. Records with an invalid date or with
      * references that can no longer be resolved are skipped.

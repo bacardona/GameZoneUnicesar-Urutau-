@@ -1,6 +1,7 @@
 package com.gamezone.service;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
@@ -23,6 +24,7 @@ public class ReturnService {
     private final SaleService saleService;
     private final ProductService productService;
     private final AccessoryService accessoryService;
+    private final WarrantyService warrantyService;
     private final List<Return> returns;
 
     /**
@@ -32,17 +34,21 @@ public class ReturnService {
      * @param saleService service used to find existing sales
      * @param productService service used to restore the stock of products
      * @param accessoryService service used to restore the stock of accessories
+     * @param warrantyService service used to cancel the warranties of returned
+     * consoles
      */
     public ReturnService(
             ReturnRepository returnRepository,
             SaleService saleService,
             ProductService productService,
-            AccessoryService accessoryService) {
+            AccessoryService accessoryService,
+            WarrantyService warrantyService) {
 
         this.returnRepository = returnRepository;
         this.saleService = saleService;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.warrantyService = warrantyService;
         this.returns = new ArrayList<>(returnRepository.loadAll());
     }
 
@@ -109,6 +115,8 @@ public class ReturnService {
                 reason
         );
 
+        returnItem.setWarrantyRefundAmount(
+                cancelReturnedWarranties(returnedProducts, saleId));
         returnItem.calculateRefundAmount();
 
         restoreReturnedStock(returnedProducts);
@@ -298,6 +306,32 @@ public class ReturnService {
         }
 
         return null;
+    }
+
+    /**
+     * Cancels the warranties of every returned console. A returned console
+     * cannot keep an active warranty, and the cost of a cancelled extended
+     * warranty is refunded to the customer.
+     *
+     * @param returnedItems products and accessories being returned
+     * @param saleId identifier of the original sale
+     * @return the total amount to refund for the cancelled warranties
+     */
+    private double cancelReturnedWarranties(
+            List<Product> returnedItems,
+            String saleId) {
+
+        double warrantyRefund = 0.0;
+
+        for (Product item : returnedItems) {
+
+            if (item instanceof Console) {
+                warrantyRefund += warrantyService.cancelWarranties(
+                        item.getId(), saleId);
+            }
+        }
+
+        return warrantyRefund;
     }
 
     /**

@@ -82,7 +82,8 @@ public class Main {
         ReturnRepository returnRepository = new ReturnRepository(
                 saleService, productService, accessoryService);
         ReturnService returnService = new ReturnService(
-                returnRepository, saleService, productService, accessoryService);
+                returnRepository, saleService, productService, accessoryService,
+                warrantyService);
         
         ConsoleUI consoleUI = new ConsoleUI(
                 personService,

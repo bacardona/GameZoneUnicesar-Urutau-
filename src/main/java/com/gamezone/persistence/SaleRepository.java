@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
@@ -32,6 +33,7 @@ public class SaleRepository {
      * On success, the in-memory list of known sales is refreshed.
      *
      * @param sales the list of sales to persist
+     * @throws PersistenceException if the file cannot be written
      */
     public void save(List<Sale> sales) {
         File file = new File(FILE_PATH);
@@ -44,7 +46,8 @@ public class SaleRepository {
             }
             knownSales = new ArrayList<>(sales);
         } catch (IOException e) {
-            System.err.println("Error saving sales: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al escribir el archivo " + FILE_PATH + " (operación: guardar ventas).", e);
         }
     }
 
@@ -58,6 +61,7 @@ public class SaleRepository {
      * @param sellers previously loaded sellers
      * @param products previously loaded products and accessories
      * @return the list of sales recovered from disk
+     * @throws PersistenceException if the file exists but cannot be read
      **/
     public List<Sale> load(List<Customer> customers, List<Seller> sellers, List<Product> products) {
         List<Sale> sales = new ArrayList<>();
@@ -77,7 +81,8 @@ public class SaleRepository {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error loading sales: " + e.getMessage());
+            throw new PersistenceException(
+                    "Error al leer el archivo " + FILE_PATH + " (operación: cargar ventas).", e);
         }
         knownSales = new ArrayList<>(sales);
         return sales;

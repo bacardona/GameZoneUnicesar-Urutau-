@@ -3,6 +3,7 @@ package com.gamezone.persistence;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
+import com.gamezone.service.AccessoryService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
 
@@ -25,20 +26,24 @@ public class ReturnRepository {
     private final String filePath = "data/returns.csv";
     private final SaleService saleService;
     private final ProductService productService;
+    private final AccessoryService accessoryService;
 
     /**
-     * Creates a ReturnRepository with the services required to resolve sale and
-     * product references when loading returns.
+     * Creates a ReturnRepository with the services required to resolve sale,
+     * product and accessory references when loading returns.
      *
      * @param saleService service used to find existing sales
      * @param productService service used to find existing products
+     * @param accessoryService service used to find existing accessories
      */
     public ReturnRepository(
             SaleService saleService,
-            ProductService productService) {
+            ProductService productService,
+            AccessoryService accessoryService) {
 
         this.saleService = saleService;
         this.productService = productService;
+        this.accessoryService = accessoryService;
     }
 
     /**
@@ -198,10 +203,12 @@ public class ReturnRepository {
     }
 
     /**
-     * Finds products by their identifiers.
+     * Finds the returned items by their identifiers. Each identifier is looked
+     * up first among products and then among accessories, because a return
+     * can include both.
      *
-     * @param productIds serialized product identifiers
-     * @return list of matching products
+     * @param productIds serialized item identifiers
+     * @return list of matching products and accessories
      */
     private List<Product> findProductsByIds(String productIds) {
 
@@ -215,12 +222,14 @@ public class ReturnRepository {
 
         for (String id : ids) {
 
-            for (Product product : productService.listProducts()) {
+            Product item = productService.findById(id);
 
-                if (product.getId().equals(id)) {
-                    products.add(product);
-                    break;
-                }
+            if (item == null) {
+                item = accessoryService.findById(id);
+            }
+
+            if (item != null) {
+                products.add(item);
             }
         }
 

@@ -19,6 +19,7 @@ public class Return {
     private List<Product> returnedProducts;
     private String reason;
     private double refundAmount;
+    private double warrantyRefundAmount;
 
     /**
      * Creates a new Return. The refund amount starts at zero and must be
@@ -39,6 +40,7 @@ public class Return {
         this.returnedProducts = returnedProducts;
         this.reason = reason;
         this.refundAmount = 0.0;
+        this.warrantyRefundAmount = 0.0;
     }
 
     public String getId() {
@@ -63,6 +65,30 @@ public class Return {
 
     public double getRefundAmount() {
         return refundAmount;
+    }
+
+    /**
+     * Returns the amount refunded for the warranties cancelled by this return.
+     *
+     * @return the warranty refund (0 if no extended warranty was cancelled)
+     */
+    public double getWarrantyRefundAmount() {
+        return warrantyRefundAmount;
+    }
+
+    /**
+     * Sets the amount refunded for the warranties cancelled by this return.
+     * It must be set before calling {@link #calculateRefundAmount()}.
+     *
+     * @param warrantyRefundAmount the warranty refund, which cannot be negative
+     * @throws IllegalArgumentException if the amount is negative
+     */
+    public void setWarrantyRefundAmount(double warrantyRefundAmount) {
+        if (warrantyRefundAmount < 0) {
+            throw new IllegalArgumentException(
+                    "Warranty refund cannot be negative.");
+        }
+        this.warrantyRefundAmount = warrantyRefundAmount;
     }
 
     /**
@@ -105,7 +131,8 @@ public class Return {
     /**
      * Calculates the refund amount by summing the proportional refund of every
      * returned product (list price minus its share of the original sale's
-     * discount), stores the result in the refundAmount attribute, and returns it.
+     * discount), plus the refund of the warranties cancelled by this return,
+     * stores the result in the refundAmount attribute, and returns it.
      *
      * @return the calculated refund amount
      */
@@ -114,6 +141,7 @@ public class Return {
         for (Product product : returnedProducts) {
             total += calculateItemRefund(product);
         }
+        total += warrantyRefundAmount;
         this.refundAmount = total;
         return total;
     }
@@ -141,6 +169,10 @@ public class Return {
                 calculateItemDiscount(product),
                 calculateItemRefund(product)));
     }
+        if (warrantyRefundAmount > 0) {
+            receipt.append(String.format(Locale.US,
+                    "Reembolso por garantías anuladas: $%.2f%n", warrantyRefundAmount));
+        }
         receipt.append("Motivo: ").append(reason).append("\n");
         receipt.append("Monto reembolsado: $").append(refundAmount).append("\n");
         receipt.append("---------------------------------");
